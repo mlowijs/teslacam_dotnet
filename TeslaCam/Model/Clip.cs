@@ -13,16 +13,17 @@ namespace TeslaCam.Model
         
         public FileInfo File { get; }
         public ClipType Type { get; }
-        public string? Event { get; }
-        
+        public DateTimeOffset? EventDate { get; }
         public Camera Camera { get; }
         public DateTimeOffset Date { get; }
 
-        public Clip(FileInfo fileInfo, ClipType type, string? @event = null)
+        public Clip(FileInfo fileInfo, ClipType type, string? eventDirectoryName = null)
         {
             File = fileInfo;
             Type = type;
-            Event = @event;
+
+            if (eventDirectoryName != null)
+                EventDate = DateTimeOffset.ParseExact(eventDirectoryName, DateTimeFormat, null, DateTimeStyles.AssumeUniversal);
 
             var regexMatch = DateTimeCameraRegex.Match(fileInfo.Name);
 

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,6 +12,8 @@ namespace TeslaCam.Services
 {
     public class TeslaCamService : ITeslaCamService
     {
+        private const int MegabyteInBytes = 1 * 1024 * 1024;
+        
         private readonly IFileSystemService _fileSystemService;
         private readonly IUploadService _uploadService;
         private readonly TeslaCamOptions _options;
@@ -48,10 +49,39 @@ namespace TeslaCam.Services
 
             var clips = _fileSystemService.GetClips(clipType).ToArray();
             _logger.LogInformation($"Found {clips.Length} clips to process");
+            
+            if (clipType == ClipType.Recent)
+            {
+                var clipsToSkip = clips.Where(c => c.Date > DateTimeOffset.Now - TimeSpan.FromMinutes(2));
+                var clipsToUpload = clips.Except(clipsToSkip).Where(IsClipValid);
+                var clipsToDelete = clips.Except(clipsToSkip).Except(clipsToUpload);
+            }
+            else
+            {
+                var groupedClips = clips.GroupBy(c => c.EventDate);
+                
+                foreach (var eventClips in clips.GroupBy(c => c.EventDate))
+                {
+                    var clipsByMinute = eventClips.GroupBy(c => c.Date)
+                        .OrderByDescending(c => c.Key)
+                        .Take(_options.KeepClipsPerEventAmount);
 
-            _uploadService.UploadClipsAsync(clips, cancellationToken);
+                    var clipsToUpload = clipsByMinute.SelectMany(cbm => cbm);
+                    var clipsToDelete = eventClips.Except(clipsToUpload);
+                }    
+            }
+            
+            
+            // _uploadService.UploadClipsAsync(clips, cancellationToken);
             
             _logger.LogInformation($"Finished processing {clipType} clips");
+        }
+
+        private bool IsClipValid(Clip clip)
+        {
+            return clip.Date != DateTimeOffset.MinValue
+                   && clip.Camera != Camera.Unknown
+                   && clip.File.Length > MegabyteInBytes;
         }
     }
 }

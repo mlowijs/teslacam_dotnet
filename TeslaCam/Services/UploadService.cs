@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using TeslaCam.Contracts;
@@ -8,11 +9,11 @@ namespace TeslaCam.Services
 {
     public class UploadService : IUploadService
     {
-        private readonly IUploader _uploader;
+        private readonly Dictionary<string, IUploader> _uploaders;
 
-        public UploadService(IUploader uploader)
+        public UploadService(IEnumerable<IUploader> uploaders)
         {
-            _uploader = uploader;
+            _uploaders = uploaders.ToDictionary(u => u.Name);
         }
 
         public Task UploadClipsAsync(IEnumerable<Clip> clips, CancellationToken cancellationToken)

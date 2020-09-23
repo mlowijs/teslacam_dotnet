@@ -2,6 +2,6 @@
 {
     public interface INotifier
     {
-        
+        string Name { get; }
     }
 }

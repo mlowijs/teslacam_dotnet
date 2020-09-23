@@ -8,5 +8,6 @@ namespace TeslaCam.Options
         public bool RootRequiresMounting { get; set; } = true;
         public int UploadInterval { get; set; } = 30;
         public ClipType[] ProcessClipTypes { get; set; } = new ClipType[0];
+        public int KeepClipsPerEventAmount { get; set; } = 10;
     }
 }

@@ -2,6 +2,6 @@
 {
     public interface IUploader
     {
-        
+        string Name { get; }
     }
 }
