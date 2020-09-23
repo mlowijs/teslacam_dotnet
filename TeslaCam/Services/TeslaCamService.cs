@@ -43,9 +43,12 @@ namespace TeslaCam.Services
 
         private void ProcessClipType(ClipType clipType, CancellationToken cancellationToken)
         {
-            var clips = _fileSystemService.GetClips(clipType).ToArray();
+            _logger.LogInformation($"Processing '{clipType}' clips");
             
+            var clips = _fileSystemService.GetClips(clipType);
+            _logger.LogInformation($"Found {clips.Count()} clips to process");
             
+            _logger.LogInformation($"Finished processing {clipType} clips");
         }
     }
 }

@@ -30,6 +30,13 @@ namespace TeslaCam.Services
         {
             var clipDirectory = new DirectoryInfo(GetDirectoryForClipType(clipType));
 
+            if (!clipDirectory.Exists)
+            {
+                _logger.LogError($"Root directory '{_options.RootDirectory}' not found");
+                return Enumerable.Empty<Clip>();
+            }
+                
+
             if (clipType == ClipType.Recent)
             {
                 return clipDirectory.EnumerateFiles()
