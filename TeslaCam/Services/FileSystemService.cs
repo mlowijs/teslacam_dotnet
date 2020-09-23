@@ -35,7 +35,6 @@ namespace TeslaCam.Services
                 _logger.LogError($"Root directory '{_options.RootDirectory}' not found");
                 return Enumerable.Empty<Clip>();
             }
-                
 
             if (clipType == ClipType.Recent)
             {

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -44,9 +45,11 @@ namespace TeslaCam.Services
         private void ProcessClipType(ClipType clipType, CancellationToken cancellationToken)
         {
             _logger.LogInformation($"Processing '{clipType}' clips");
-            
-            var clips = _fileSystemService.GetClips(clipType);
-            _logger.LogInformation($"Found {clips.Count()} clips to process");
+
+            var clips = _fileSystemService.GetClips(clipType).ToArray();
+            _logger.LogInformation($"Found {clips.Length} clips to process");
+
+            _uploadService.UploadClipsAsync(clips, cancellationToken);
             
             _logger.LogInformation($"Finished processing {clipType} clips");
         }
