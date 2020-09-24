@@ -6,8 +6,11 @@ namespace TeslaCam.Options
     {
         public string RootDirectory { get; set; } = "/mnt/usbfs";
         public bool RootRequiresMounting { get; set; } = true;
+        
         public int UploadInterval { get; set; } = 30;
-        public ClipType[] ProcessClipTypes { get; set; } = new ClipType[0];
+        
+        public ClipType[] ClipTypesToProcess { get; set; } = new ClipType[0];
+        public Camera[] CamerasToProcess { get; set; } = {Camera.Back, Camera.Front, Camera.LeftRepeater, Camera.RightRepeater};
         public int KeepClipsPerEventAmount { get; set; } = 10;
     }
 }

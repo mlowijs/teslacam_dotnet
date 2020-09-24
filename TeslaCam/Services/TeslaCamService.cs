@@ -34,7 +34,7 @@ namespace TeslaCam.Services
             
             while (!cancellationToken.IsCancellationRequested)
             {
-                foreach (var clipType in _options.ProcessClipTypes)
+                foreach (var clipType in _options.ClipTypesToProcess)
                     ProcessClipType(clipType, cancellationToken);
                 
                 await Task.Delay(TimeSpan.FromSeconds(_options.UploadInterval), cancellationToken);
@@ -53,20 +53,25 @@ namespace TeslaCam.Services
             if (clipType == ClipType.Recent)
             {
                 var clipsToSkip = clips.Where(c => c.Date > DateTimeOffset.Now - TimeSpan.FromMinutes(2));
-                var clipsToUpload = clips.Except(clipsToSkip).Where(IsClipValid);
+                
+                var clipsToUpload = clips.Except(clipsToSkip)
+                    .Where(IsClipValid)
+                    .Where(c => _options.CamerasToProcess.Contains(c.Camera));
+                
                 var clipsToDelete = clips.Except(clipsToSkip).Except(clipsToUpload);
             }
             else
             {
-                var groupedClips = clips.GroupBy(c => c.EventDate);
-                
                 foreach (var eventClips in clips.GroupBy(c => c.EventDate))
                 {
+                    // Group clips by minute and only take minutes we want to keep
                     var clipsByMinute = eventClips.GroupBy(c => c.Date)
                         .OrderByDescending(c => c.Key)
                         .Take(_options.KeepClipsPerEventAmount);
 
-                    var clipsToUpload = clipsByMinute.SelectMany(cbm => cbm);
+                    var clipsToUpload = clipsByMinute.SelectMany(cbm => cbm)
+                        .Where(c => _options.CamerasToProcess.Contains(c.Camera));
+                    
                     var clipsToDelete = eventClips.Except(clipsToUpload);
                 }    
             }
