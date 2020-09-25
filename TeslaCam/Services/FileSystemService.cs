@@ -72,8 +72,10 @@ namespace TeslaCam.Services
 
                 _logger.LogInformation($"Archiving clip '{clip.File.Name}' ({i + 1}/{clipsArray.Length})");
                 
-                if (!File.Exists(archiveClipPath))
-                    clip.File.CopyTo(archiveClipPath, false);
+                var existingFile = new FileInfo(archiveClipPath);
+                
+                if (!existingFile.Exists || existingFile.Length != clip.File.Length)
+                    clip.File.CopyTo(archiveClipPath, true);
             }
         }
 

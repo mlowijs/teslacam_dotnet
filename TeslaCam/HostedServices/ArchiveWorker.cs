@@ -26,6 +26,30 @@ namespace TeslaCam.HostedServices
             _logger = logger;
         }
 
+        private void ArchiveRecent()
+        {
+            if (_options.RootRequiresMounting)
+                _fileSystemService.MountFileSystem();
+                    
+            var clips = _fileSystemService.GetClips(ClipType.Recent).ToArray();
+
+            if (clips.Length == 0)
+                return;
+            
+            var clipsToArchive = clips
+                .Where(c => c.IsValid)
+                .Where(c => _options.CamerasToProcess.Contains(c.Camera))
+                .ToArray();
+            
+            _logger.LogInformation(
+                $"Will archive {clipsToArchive.Length} clips");
+
+            _fileSystemService.ArchiveClips(clipsToArchive);
+            
+            if (_options.RootRequiresMounting)
+                _fileSystemService.UnmountFileSystem();
+        }
+        
         protected override Task ExecuteAsync(CancellationToken stoppingToken)
         {
             return Task.Run(async () =>
@@ -34,32 +58,7 @@ namespace TeslaCam.HostedServices
 
                 while (!stoppingToken.IsCancellationRequested)
                 {
-                    _logger.LogInformation("Starting archiving");
                     
-                    if (_options.RootRequiresMounting)
-                        _fileSystemService.MountFileSystem();
-                    
-                    var clips = _fileSystemService.GetClips(ClipType.Recent).ToArray();
-
-                    if (clips.Length > 0)
-                    {
-                        var clipsToArchive = clips
-                            .Where(c => c.IsValid)
-                            .Where(c => _options.CamerasToProcess.Contains(c.Camera))
-                            .ToArray();
-
-                        var clipsToDelete = clips
-                            .Except(clipsToArchive)
-                            .ToArray();
-
-                        _logger.LogInformation(
-                            $"Will archive {clipsToArchive.Length} clips and delete {clipsToDelete.Length} clips");
-
-                        _fileSystemService.ArchiveClips(clipsToArchive);
-                    }
-                    
-                    if (_options.RootRequiresMounting)
-                        _fileSystemService.UnmountFileSystem();
                     
                     _logger.LogInformation("Archiving complete");
 
