@@ -16,6 +16,10 @@ namespace TeslaCam.Model
         public DateTimeOffset? EventDate { get; }
         public Camera Camera { get; }
         public DateTimeOffset Date { get; }
+        
+        public bool IsValid => Date != DateTimeOffset.MinValue
+                               && Camera != Camera.Unknown
+                               && File.Length > Constants.MegabyteInBytes;
 
         public Clip(FileInfo fileInfo, ClipType type, string? eventDirectoryName = null)
         {
@@ -37,7 +41,8 @@ namespace TeslaCam.Model
                 "front" => Camera.Front,
                 "left_repeater" => Camera.LeftRepeater,
                 "right_repeater" => Camera.RightRepeater,
-                "back" => Camera.Back
+                "back" => Camera.Back,
+                _ => Camera.Unknown
             };
         }
     }

@@ -4,8 +4,9 @@ namespace TeslaCam.Options
 {
     public class TeslaCamOptions
     {
-        public string RootDirectory { get; set; } = "/mnt/usbfs";
+        public string RootDirectory { get; set; } = "/mnt/teslacam";
         public bool RootRequiresMounting { get; set; } = true;
+        public string ArchiveDirectory { get; set; } = "/var/lib/teslacam/archive";
         
         public int UploadInterval { get; set; } = 30;
         

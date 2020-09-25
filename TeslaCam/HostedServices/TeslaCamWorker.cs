@@ -1,10 +1,9 @@
-﻿using System;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using TeslaCam.Contracts;
 
-namespace TeslaCam
+namespace TeslaCam.HostedServices
 {
     public class TeslaCamWorker : BackgroundService
     {

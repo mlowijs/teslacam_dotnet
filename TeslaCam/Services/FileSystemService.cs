@@ -16,6 +16,7 @@ namespace TeslaCam.Services
         private const string RecentClipsDirectory = "RecentClips";
         private const string SavedClipsDirectory = "SavedClips";
         private const string SentryClipsDirectory = "SentryClips";
+        private const string ArchiveDirectory = "Archive";
         
         private readonly ILogger<FileSystemService> _logger;
         private readonly TeslaCamOptions _options;
@@ -47,18 +48,54 @@ namespace TeslaCam.Services
                     .Select(fileInfo => new Clip(fileInfo, clipType, dirInfo.Name)));
         }
 
-        public void MountUsbFileSystem()
+        public void DeleteClips(IEnumerable<Clip> clips)
+        {
+            var clipsArray = clips.ToArray();
+
+            for (var i = 0; i < clipsArray.Length; i++)
+            {
+                var clip = clipsArray[i];
+                
+                _logger.LogInformation($"Deleting clip '{clip.File.Name}' ({i + 1}/{clipsArray.Length})");
+                clip.File.Delete();
+            }
+        }
+
+        public void ArchiveClips(IEnumerable<Clip> clips)
+        {
+            var clipsArray = clips.ToArray();
+            
+            for (var i = 0; i < clipsArray.Length; i++)
+            {
+                var clip = clipsArray[i];
+                var archiveClipPath = Path.Join(_options.ArchiveDirectory, clip.File.Name);
+
+                _logger.LogInformation($"Archiving clip '{clip.File.Name}' ({i + 1}/{clipsArray.Length})");
+                
+                if (!File.Exists(archiveClipPath))
+                    clip.File.CopyTo(archiveClipPath, false);
+            }
+        }
+
+        public void MountFileSystem(bool readWrite = false)
         {
             _logger.LogDebug($"Mounting '{_options.RootDirectory}'");
 
-            Process.Start("mount", _options.RootDirectory);
+            var startInfo = new ProcessStartInfo("/usr/bin/mount");
+            
+            if (readWrite)
+                startInfo.ArgumentList.Add("-orw");
+            
+            startInfo.ArgumentList.Add(_options.RootDirectory);
+
+            Process.Start(startInfo).WaitForExit();
         }
 
-        public void UnmountUsbFileSystem()
+        public void UnmountFileSystem()
         {
             _logger.LogDebug($"Unmounting '{_options.RootDirectory}'");
 
-            Process.Start("umount", _options.RootDirectory);
+            Process.Start("/usr/bin/umount", _options.RootDirectory).WaitForExit();
         }
 
         private string GetDirectoryForClipType(ClipType clipType)
@@ -67,7 +104,8 @@ namespace TeslaCam.Services
             {
                 ClipType.Recent => RecentClipsDirectory,
                 ClipType.Saved => SavedClipsDirectory,
-                ClipType.Sentry => SentryClipsDirectory
+                ClipType.Sentry => SentryClipsDirectory,
+                _ => null
             };
 
             return Path.Join(_options.RootDirectory, TeslaCamDirectory, clipsDirectory);

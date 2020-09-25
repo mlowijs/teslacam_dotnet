@@ -5,6 +5,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using TeslaCam.Contracts;
 using TeslaCam.Extensions;
+using TeslaCam.HostedServices;
 using TeslaCam.Notifiers;
 using TeslaCam.Options;
 using TeslaCam.Services;
@@ -38,8 +39,8 @@ namespace TeslaCam
                     
                     services.AddSingleton<INotifier, PushoverNotifier>();
                     
-                    services.AddHostedService<TeslaCamWorker>();
-                    services.AddHostedService<RecentArchiveWorker>();
+                    // services.AddHostedService<TeslaCamWorker>();
+                    services.AddHostedService<ArchiveWorker>();
                 })
                 .UseSystemd()
                 .Build();

@@ -50,43 +50,42 @@ namespace TeslaCam.Services
             var clips = _fileSystemService.GetClips(clipType).ToArray();
             _logger.LogInformation($"Found {clips.Length} clips to process");
             
-            if (clipType == ClipType.Recent)
+            // if (clipType == ClipType.Recent)
+            // {
+            //     var clipsToSkip = clips
+            //         .Where(c => c.Date > DateTimeOffset.Now - TimeSpan.FromMinutes(2));
+            //     
+            //     var clipsToUpload = clips
+            //         .Except(clipsToSkip)
+            //         .Where(IsClipValid)
+            //         .Where(c => _options.CamerasToProcess.Contains(c.Camera));
+            //     
+            //     var clipsToDelete = clips
+            //         .Except(clipsToSkip)
+            //         .Except(clipsToUpload);
+            // }
+            // else
+            // {
+            foreach (var eventClips in clips.GroupBy(c => c.EventDate))
             {
-                var clipsToSkip = clips.Where(c => c.Date > DateTimeOffset.Now - TimeSpan.FromMinutes(2));
-                
-                var clipsToUpload = clips.Except(clipsToSkip)
-                    .Where(IsClipValid)
+                // Group clips by minute and only take minutes we want to keep
+                var clipsByMinute = eventClips
+                    .GroupBy(c => c.Date)
+                    .OrderByDescending(c => c.Key)
+                    .Take(_options.KeepClipsPerEventAmount);
+
+                var clipsToUpload = clipsByMinute
+                    .SelectMany(cbm => cbm)
                     .Where(c => _options.CamerasToProcess.Contains(c.Camera));
                 
-                var clipsToDelete = clips.Except(clipsToSkip).Except(clipsToUpload);
+                var clipsToDelete = eventClips.Except(clipsToUpload);
             }
-            else
-            {
-                foreach (var eventClips in clips.GroupBy(c => c.EventDate))
-                {
-                    // Group clips by minute and only take minutes we want to keep
-                    var clipsByMinute = eventClips.GroupBy(c => c.Date)
-                        .OrderByDescending(c => c.Key)
-                        .Take(_options.KeepClipsPerEventAmount);
-
-                    var clipsToUpload = clipsByMinute.SelectMany(cbm => cbm)
-                        .Where(c => _options.CamerasToProcess.Contains(c.Camera));
-                    
-                    var clipsToDelete = eventClips.Except(clipsToUpload);
-                }    
-            }
+            // }
             
             
             // _uploadService.UploadClipsAsync(clips, cancellationToken);
             
             _logger.LogInformation($"Finished processing {clipType} clips");
-        }
-
-        private bool IsClipValid(Clip clip)
-        {
-            return clip.Date != DateTimeOffset.MinValue
-                   && clip.Camera != Camera.Unknown
-                   && clip.File.Length > MegabyteInBytes;
         }
     }
 }
