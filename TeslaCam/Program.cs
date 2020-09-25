@@ -46,6 +46,7 @@ namespace TeslaCam
                     services.AddSingleton<ITeslaCamService, TeslaCamService>();
                     services.AddSingleton<IUploadService, UploadService>();
                     services.AddSingleton<IFileSystemService, FileSystemService>();
+                    services.AddSingleton<INetworkService, NetworkService>();
                     services.AddSingleton<IKernelService, KernelService>();
 
                     services.AddSingleton<IUploader, AzureBlobStorageUploader>();
