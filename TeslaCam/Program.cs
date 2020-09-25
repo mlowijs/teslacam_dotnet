@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Console;
 using TeslaCam.Contracts;
 using TeslaCam.Extensions;
 using TeslaCam.HostedServices;
@@ -17,14 +18,25 @@ namespace TeslaCam
     {
         private static async Task Main(string[] args)
         {
-            var hostBuilder = new HostBuilder()
+            var hostBuilder = GetHostBuilder()
+                .Build();
+            
+            await hostBuilder.RunAsync();
+        }
+
+        private static IHostBuilder GetHostBuilder()
+        {
+            return new HostBuilder()
                 .ConfigureAppConfiguration(builder =>
                 {
                     builder.AddJsonFile("appsettings.json", false);
                 })
                 .ConfigureLogging(builder =>
                 {
-                    builder.AddConsole();
+                    builder.AddConsole(options =>
+                    {
+                        options.Format = ConsoleLoggerFormat.Systemd;
+                    });
                 })
                 .ConfigureServices(services =>
                 {
@@ -34,18 +46,15 @@ namespace TeslaCam
                     services.AddSingleton<ITeslaCamService, TeslaCamService>();
                     services.AddSingleton<IUploadService, UploadService>();
                     services.AddSingleton<IFileSystemService, FileSystemService>();
-                    
+
                     services.AddSingleton<IUploader, AzureBlobStorageUploader>();
-                    
+
                     services.AddSingleton<INotifier, PushoverNotifier>();
-                    
+
                     // services.AddHostedService<TeslaCamWorker>();
                     services.AddHostedService<ArchiveWorker>();
                 })
-                .UseSystemd()
-                .Build();
-            
-            await hostBuilder.RunAsync();
+                .UseSystemd();
         }
     }
 }

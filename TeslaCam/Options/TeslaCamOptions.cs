@@ -1,4 +1,5 @@
-﻿using TeslaCam.Model;
+﻿using System;
+using TeslaCam.Model;
 
 namespace TeslaCam.Options
 {
@@ -13,5 +14,7 @@ namespace TeslaCam.Options
         public ClipType[] ClipTypesToProcess { get; set; } = new ClipType[0];
         public Camera[] CamerasToProcess { get; set; } = {Camera.Back, Camera.Front, Camera.LeftRepeater, Camera.RightRepeater};
         public int KeepClipsPerEventAmount { get; set; } = 10;
+
+        public TimeSpan CleanTime { get; set; } = TimeSpan.FromHours(2);
     }
 }

@@ -52,18 +52,14 @@ namespace TeslaCam.HostedServices
         {
             if (!_options.ClipTypesToProcess.Contains(ClipType.Recent))
             {
-                _logger.LogDebug("Not archiving Recent clips because they are not enabled");
+                _logger.LogInformation("Not archiving Recent clips because they are not enabled");
                 return;
             }
             
             _logger.LogInformation("Archiving Recent clips");
 
-            var clips = _fileSystemService.GetClips(ClipType.Recent).ToArray();
-
-            if (clips.Length == 0)
-                return;
-            
-            var clipsToArchive = clips
+            var clips = _fileSystemService
+                .GetClips(ClipType.Recent)
                 .Where(c => c.IsValid)
                 .Where(c => _options.CamerasToProcess.Contains(c.Camera))
                 .Where(c =>
@@ -73,10 +69,16 @@ namespace TeslaCam.HostedServices
                     return !fileInfo.Exists || fileInfo.Length != c.File.Length;
                 })
                 .ToArray();
-            
-            _logger.LogInformation($"Will archive {clipsToArchive.Length} clips");
 
-            _fileSystemService.ArchiveClips(clipsToArchive);
+            if (clips.Length == 0)
+            {
+                _logger.LogInformation("No new Recent clips to archive");
+                return;
+            }
+
+            _logger.LogInformation($"Will archive {clips.Length} clips");
+
+            _fileSystemService.ArchiveClips(clips);
         }
     }
 }
