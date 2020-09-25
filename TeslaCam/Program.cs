@@ -46,6 +46,7 @@ namespace TeslaCam
                     services.AddSingleton<ITeslaCamService, TeslaCamService>();
                     services.AddSingleton<IUploadService, UploadService>();
                     services.AddSingleton<IFileSystemService, FileSystemService>();
+                    services.AddSingleton<IKernelService, KernelService>();
 
                     services.AddSingleton<IUploader, AzureBlobStorageUploader>();
 
@@ -53,6 +54,7 @@ namespace TeslaCam
 
                     // services.AddHostedService<TeslaCamWorker>();
                     services.AddHostedService<ArchiveWorker>();
+                    services.AddHostedService<CleanWorker>();
                 })
                 .UseSystemd();
         }
