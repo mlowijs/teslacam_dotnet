@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -26,30 +27,6 @@ namespace TeslaCam.HostedServices
             _logger = logger;
         }
 
-        private void ArchiveRecent()
-        {
-            if (_options.RootRequiresMounting)
-                _fileSystemService.MountFileSystem();
-                    
-            var clips = _fileSystemService.GetClips(ClipType.Recent).ToArray();
-
-            if (clips.Length == 0)
-                return;
-            
-            var clipsToArchive = clips
-                .Where(c => c.IsValid)
-                .Where(c => _options.CamerasToProcess.Contains(c.Camera))
-                .ToArray();
-            
-            _logger.LogInformation(
-                $"Will archive {clipsToArchive.Length} clips");
-
-            _fileSystemService.ArchiveClips(clipsToArchive);
-            
-            if (_options.RootRequiresMounting)
-                _fileSystemService.UnmountFileSystem();
-        }
-        
         protected override Task ExecuteAsync(CancellationToken stoppingToken)
         {
             return Task.Run(async () =>
@@ -58,7 +35,9 @@ namespace TeslaCam.HostedServices
 
                 while (!stoppingToken.IsCancellationRequested)
                 {
+                    _logger.LogInformation("Starting archiving");
                     
+                    ArchiveRecent();
                     
                     _logger.LogInformation("Archiving complete");
 
@@ -67,6 +46,37 @@ namespace TeslaCam.HostedServices
 
                 _logger.LogInformation("Stopping archive worker");
             }, stoppingToken);
+        }
+        
+        private void ArchiveRecent()
+        {
+            if (!_options.ClipTypesToProcess.Contains(ClipType.Recent))
+            {
+                _logger.LogDebug("Not archiving Recent clips because they are not enabled");
+                return;
+            }
+            
+            _logger.LogInformation("Archiving Recent clips");
+
+            var clips = _fileSystemService.GetClips(ClipType.Recent).ToArray();
+
+            if (clips.Length == 0)
+                return;
+            
+            var clipsToArchive = clips
+                .Where(c => c.IsValid)
+                .Where(c => _options.CamerasToProcess.Contains(c.Camera))
+                .Where(c =>
+                {
+                    var fileInfo = new FileInfo(Path.Join(_options.ArchiveDirectory, c.File.Name));
+                    
+                    return !fileInfo.Exists || fileInfo.Length != c.File.Length;
+                })
+                .ToArray();
+            
+            _logger.LogInformation($"Will archive {clipsToArchive.Length} clips");
+
+            _fileSystemService.ArchiveClips(clipsToArchive);
         }
     }
 }

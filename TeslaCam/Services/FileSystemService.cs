@@ -29,6 +29,9 @@ namespace TeslaCam.Services
 
         public IEnumerable<Clip> GetClips(ClipType clipType)
         {
+            if (_options.RootRequiresMounting)
+                MountFileSystem();
+            
             var clipDirectory = new DirectoryInfo(GetDirectoryForClipType(clipType));
 
             if (!clipDirectory.Exists)
@@ -36,22 +39,34 @@ namespace TeslaCam.Services
                 _logger.LogError($"Root directory '{_options.RootDirectory}' not found");
                 return Enumerable.Empty<Clip>();
             }
-
+            
+            IEnumerable<Clip> clips;
+            
             if (clipType == ClipType.Recent)
             {
-                return clipDirectory.EnumerateFiles()
+                clips = clipDirectory.EnumerateFiles()
                     .Select(fileInfo => new Clip(fileInfo, clipType));
             }
+            else
+            {
+                clips = clipDirectory.EnumerateDirectories()
+                    .SelectMany(dirInfo => dirInfo.EnumerateFiles()
+                        .Select(fileInfo => new Clip(fileInfo, clipType, dirInfo.Name)));
+            }
 
-            return clipDirectory.EnumerateDirectories()
-                .SelectMany(dirInfo => dirInfo.EnumerateFiles()
-                    .Select(fileInfo => new Clip(fileInfo, clipType, dirInfo.Name)));
+            if (_options.RootRequiresMounting)
+                UnmountFileSystem();
+
+            return clips;
         }
 
         public void DeleteClips(IEnumerable<Clip> clips)
         {
             var clipsArray = clips.ToArray();
 
+            if (_options.RootRequiresMounting)
+                MountFileSystem(true);
+            
             for (var i = 0; i < clipsArray.Length; i++)
             {
                 var clip = clipsArray[i];
@@ -59,27 +74,33 @@ namespace TeslaCam.Services
                 _logger.LogInformation($"Deleting clip '{clip.File.Name}' ({i + 1}/{clipsArray.Length})");
                 clip.File.Delete();
             }
+            
+            if (_options.RootRequiresMounting)
+                UnmountFileSystem();
         }
 
         public void ArchiveClips(IEnumerable<Clip> clips)
         {
             var clipsArray = clips.ToArray();
+
+            if (_options.RootRequiresMounting)
+                MountFileSystem();
             
             for (var i = 0; i < clipsArray.Length; i++)
             {
                 var clip = clipsArray[i];
-                var archiveClipPath = Path.Join(_options.ArchiveDirectory, clip.File.Name);
 
                 _logger.LogInformation($"Archiving clip '{clip.File.Name}' ({i + 1}/{clipsArray.Length})");
-                
-                var existingFile = new FileInfo(archiveClipPath);
-                
-                if (!existingFile.Exists || existingFile.Length != clip.File.Length)
-                    clip.File.CopyTo(archiveClipPath, true);
+
+                var archivePath = Path.Join(_options.ArchiveDirectory, clip.File.Name);
+                clip.File.CopyTo(archivePath, true);
             }
+            
+            if (_options.RootRequiresMounting)
+                UnmountFileSystem();
         }
 
-        public void MountFileSystem(bool readWrite = false)
+        private void MountFileSystem(bool readWrite = false)
         {
             _logger.LogDebug($"Mounting '{_options.RootDirectory}'");
 
@@ -93,7 +114,7 @@ namespace TeslaCam.Services
             Process.Start(startInfo).WaitForExit();
         }
 
-        public void UnmountFileSystem()
+        private void UnmountFileSystem()
         {
             _logger.LogDebug($"Unmounting '{_options.RootDirectory}'");
 

@@ -8,7 +8,5 @@ namespace TeslaCam.Contracts
         IEnumerable<Clip> GetClips(ClipType clipType);
         void DeleteClips(IEnumerable<Clip> clips);
         void ArchiveClips(IEnumerable<Clip> clips);
-        void MountFileSystem(bool readWrite = false);
-        void UnmountFileSystem();
     }
 }
