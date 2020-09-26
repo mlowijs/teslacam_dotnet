@@ -8,5 +8,6 @@ namespace TeslaCam.Contracts
         IEnumerable<Clip> GetClips(ClipType clipType);
         void DeleteClips(IEnumerable<Clip> clips);
         void ArchiveClips(IEnumerable<Clip> clips);
+        bool IsArchived(Clip clip);
     }
 }

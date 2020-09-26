@@ -1,5 +1,4 @@
 ﻿using System;
-using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -62,12 +61,7 @@ namespace TeslaCam.HostedServices
                 .GetClips(ClipType.Recent)
                 .Where(c => c.IsValid)
                 .Where(c => _options.CamerasToProcess.Contains(c.Camera))
-                .Where(c =>
-                {
-                    var fileInfo = new FileInfo(Path.Join(_options.ArchiveDirectory, c.File.Name));
-                    
-                    return !fileInfo.Exists || fileInfo.Length != c.File.Length;
-                })
+                .Where(c => !_fileSystemService.IsArchived(c))
                 .ToArray();
 
             if (clips.Length == 0)

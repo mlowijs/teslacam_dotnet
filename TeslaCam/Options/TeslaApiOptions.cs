@@ -4,5 +4,6 @@ namespace TeslaCam.Options
     {
         public string? UserName { get; set; } = null;
         public string? Password { get; set; } = null;
+        public string? Vin { get; set; } = null;
     }
 }
