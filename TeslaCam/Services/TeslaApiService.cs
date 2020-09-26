@@ -36,12 +36,34 @@ namespace TeslaCam.Services
         
         public async Task EnableSentryMode()
         {
-            await ListVehicles();
+            await WakeVehicle(123);
+
+            await SetSentryMode(123, true);
         }
 
         public Task DisableSentryMode()
         {
-            throw new System.NotImplementedException();
+            return SetSentryMode(123, false);
+        }
+
+        private async Task WakeVehicle(long vehicleId)
+        {
+            await Authenticate();
+            
+            var requestMessage =
+                new HttpRequestMessage(HttpMethod.Post, $"api/1/vehicles/{vehicleId}/wake_up");
+            
+            await _httpClient.SendAsync(requestMessage);
+        }
+        
+        private async Task SetSentryMode(long vehicleId, bool enabled)
+        {
+            await Authenticate();
+            
+            var requestMessage =
+                new HttpRequestMessage(HttpMethod.Post, $"api/1/vehicles/{vehicleId}/command/set_sentry_mode");
+
+            await _httpClient.SendAsync(requestMessage);
         }
 
         private async Task Authenticate()
@@ -100,14 +122,6 @@ namespace TeslaCam.Services
             return responseMessage.IsSuccessStatusCode
                 ? JsonSerializer.Deserialize<TokenResponse>(responseString)
                 : null;
-        }
-
-        private async Task ListVehicles()
-        {
-            await Authenticate();
-            
-            var requestMessage = new HttpRequestMessage(HttpMethod.Get, "api/1/vehicles");
-            var responseMessage = await _httpClient.SendAsync(requestMessage);
         }
     }
 }
