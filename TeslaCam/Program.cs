@@ -29,7 +29,8 @@ namespace TeslaCam
             return new HostBuilder()
                 .ConfigureAppConfiguration(builder =>
                 {
-                    builder.AddJsonFile("appsettings.json", false);
+                    builder.AddJsonFile("appsettings.json", false)
+                        .AddEnvironmentVariables();
                 })
                 .ConfigureLogging(builder =>
                 {
@@ -42,12 +43,16 @@ namespace TeslaCam
                 {
                     services.AddOptions<TeslaCamOptions>()
                         .ConfigureSection();
+                    
+                    services.AddOptions<TeslaApiOptions>()
+                        .ConfigureSection();
 
                     services.AddSingleton<ITeslaCamService, TeslaCamService>();
                     services.AddSingleton<IUploadService, UploadService>();
                     services.AddSingleton<IFileSystemService, FileSystemService>();
                     services.AddSingleton<INetworkService, NetworkService>();
                     services.AddSingleton<IKernelService, KernelService>();
+                    services.AddSingleton<ITeslaApiService, TeslaApiService>();
 
                     services.AddSingleton<IUploader, AzureBlobStorageUploader>();
 
@@ -55,7 +60,7 @@ namespace TeslaCam
 
                     // services.AddHostedService<TeslaCamWorker>();
                     services.AddHostedService<ArchiveWorker>();
-                    services.AddHostedService<CleanWorker>();
+                    // services.AddHostedService<CleanWorker>();
                 })
                 .UseSystemd();
         }
