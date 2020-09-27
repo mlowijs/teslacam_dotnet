@@ -18,7 +18,6 @@ namespace TeslaApi
         private readonly HttpClient _httpClient;
         private readonly string _email;
         private readonly string _password;
-        private readonly JsonSerializerOptions _jsonSerializerOptions;
         
         private string? _refreshToken;
         private DateTimeOffset _expiresAt;
@@ -27,11 +26,6 @@ namespace TeslaApi
         {
             _email = email;
             _password = password;
-
-            _jsonSerializerOptions = new JsonSerializerOptions
-            {
-                Converters = { new VehicleStatusConverter() }
-            };
 
             _httpClient = new HttpClient
             {
@@ -144,7 +138,7 @@ namespace TeslaApi
             }
 
             var apiResponse =
-                JsonSerializer.Deserialize<TeslaApiResponse<TResponse>>(responseString, _jsonSerializerOptions);
+                JsonSerializer.Deserialize<TeslaApiResponse<TResponse>>(responseString);
 
             return apiResponse.Response;
         }
