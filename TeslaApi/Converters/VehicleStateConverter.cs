@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 
 namespace TeslaApi.Converters
 {
-    public class VehicleStatusConverter : JsonConverter<bool>
+    public class VehicleStateConverter : JsonConverter<bool>
     {
         public override bool Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {

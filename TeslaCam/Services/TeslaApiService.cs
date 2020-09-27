@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
 using TeslaApi;
@@ -22,6 +23,10 @@ namespace TeslaCam.Services
         public async Task EnableSentryMode()
         {
             var vehicles = await _apiClient.ListVehicles();
+
+            var vehicle = vehicles.SingleOrDefault(v => v.VehicleIdentificationNumber == _options.Vin);
+
+            await _apiClient.WakeUp(vehicle.Id);
         }
 
         public Task DisableSentryMode()

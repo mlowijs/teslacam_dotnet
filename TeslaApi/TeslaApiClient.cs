@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using TeslaApi.Converters;
@@ -46,24 +47,23 @@ namespace TeslaApi
             return await DoRequestAsync<IEnumerable<TeslaVehicle>>(HttpMethod.Get, "api/1/vehicles");
         }
         
-        private async Task WakeVehicle(long vehicleId)
+        public async Task<TeslaVehicle> WakeUp(long vehicleId)
         {
             await Authenticate();
-            
-            var requestMessage =
-                new HttpRequestMessage(HttpMethod.Post, $"api/1/vehicles/{vehicleId}/wake_up");
-            
-            await _httpClient.SendAsync(requestMessage);
+
+            return await DoRequestAsync<TeslaVehicle>(HttpMethod.Post, $"api/1/vehicles/{vehicleId}/wake_up");
         }
         
-        private async Task SetSentryMode(long vehicleId, bool enabled)
+        public async Task<bool> SetSentryMode(long vehicleId, bool enabled)
         {
             await Authenticate();
-            
-            var requestMessage =
-                new HttpRequestMessage(HttpMethod.Post, $"api/1/vehicles/{vehicleId}/command/set_sentry_mode");
 
-            await _httpClient.SendAsync(requestMessage);
+            var response = await DoRequestAsync<CommandResponse<bool>>(
+                HttpMethod.Post,
+                $"api/1/vehicles/{vehicleId}/command/set_sentry_mode",
+                new { on = enabled });
+
+            return response.Result;
         }
         
         private async Task Authenticate()
@@ -124,10 +124,13 @@ namespace TeslaApi
                 : null;
         }
 
-        private async Task<TResponse> DoRequestAsync<TResponse>(HttpMethod method, string url)
+        private async Task<TResponse> DoRequestAsync<TResponse>(HttpMethod method, string url, object payload = null)
             where TResponse : class
         {
             var requestMessage = new HttpRequestMessage(method, url);
+            
+            if (payload != null)
+                requestMessage.Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8);
             
             var responseMessage = await _httpClient.SendAsync(requestMessage);
             var responseString = await responseMessage.Content.ReadAsStringAsync();
