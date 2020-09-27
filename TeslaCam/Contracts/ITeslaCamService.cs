@@ -5,6 +5,6 @@ namespace TeslaCam.Contracts
 {
     public interface ITeslaCamService
     {
-        Task StartAsync(CancellationToken cancellationToken);
+        void ArchiveRecentClips();
     }
 }

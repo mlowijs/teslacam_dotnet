@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Reflection.Metadata;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -27,20 +28,47 @@ namespace TeslaCam.Services
             _fileSystemService = fileSystemService;
             _logger = logger;
         }
-        
-        public async Task StartAsync(CancellationToken cancellationToken)
+
+        public void ArchiveRecentClips()
         {
-            _logger.LogInformation("TeslaCam service started");
-            
-            while (!cancellationToken.IsCancellationRequested)
+            if (!_options.ClipTypesToProcess.Contains(ClipType.Recent))
             {
-                foreach (var clipType in _options.ClipTypesToProcess)
-                    ProcessClipType(clipType, cancellationToken);
-                
-                await Task.Delay(TimeSpan.FromSeconds(_options.UploadInterval), cancellationToken);
+                _logger.LogInformation("Not archiving Recent clips because they are not enabled");
+                return;
             }
             
-            _logger.LogInformation("TeslaCam service stopped");
+            _logger.LogInformation("Archiving Recent clips");
+
+            var clips = _fileSystemService
+                .GetClips(ClipType.Recent)
+                .Where(c => c.IsValid)
+                .Where(c => _options.CamerasToProcess.Contains(c.Camera))
+                .Where(c => !_fileSystemService.IsArchived(c))
+                .ToArray();
+
+            if (clips.Length == 0)
+            {
+                _logger.LogInformation("No new Recent clips to archive");
+                return;
+            }
+
+            _logger.LogInformation($"Will archive {clips.Length} Recent clips");
+
+            _fileSystemService.ArchiveClips(clips);
+        }
+
+        public void ArchiveEventClips(ClipType clipType)
+        {
+            if (!_options.ClipTypesToProcess.Contains(clipType))
+            {
+                _logger.LogInformation($"Not archiving {clipType} clips because they are not enabled");
+                return;
+            }
+            
+            _logger.LogInformation($"Archiving {clipType} clips");
+            
+            var clips = _fileSystemService
+                .GetClips(clipType)
         }
 
         private void ProcessClipType(ClipType clipType, CancellationToken cancellationToken)

@@ -18,6 +18,7 @@ namespace TeslaCam.Services
         private const string SavedClipsDirectory = "SavedClips";
         private const string SentryClipsDirectory = "SentryClips";
         private const string ArchiveDirectory = "archive";
+        private const string EventDirectoryDateFormat = ""
         
         private readonly ILogger<FileSystemService> _logger;
         private readonly TeslaCamOptions _options;
@@ -86,15 +87,28 @@ namespace TeslaCam.Services
 
             if (_options.MountingRequired)
                 MountFileSystem();
-            
+
             for (var i = 0; i < clipsArray.Length; i++)
             {
                 var clip = clipsArray[i];
 
                 _logger.LogInformation($"Archiving clip '{clip.File.Name}' ({i + 1}/{clipsArray.Length})");
+             
+                var archivePath = Path.Join(_options.DataDirectory, ArchiveDirectory);
+                // var archiveDirectory = new DirectoryInfo(archivePath);
+                
+                if (!Directory.Exists(archivePath))
+                    Directory.CreateDirectory(archivePath);
+                
+                if (clip.Type == ClipType.Saved || clip.Type == ClipType.Sentry)
+                {
+                    archivePath = Path.Join(archivePath, clip.EventDate!.Value.ToString("s"));
 
-                var archivePath = Path.Join(_options.DataDirectory, ArchiveDirectory, clip.File.Name);
-                clip.File.CopyTo(archivePath, true);
+                    if (!Directory.Exists(archivePath))
+                        Directory.CreateDirectory(archivePath);
+                }
+                
+                clip.File.CopyTo(Path.Join(archivePath, clip.File.Name), true);
             }
             
             if (_options.MountingRequired)

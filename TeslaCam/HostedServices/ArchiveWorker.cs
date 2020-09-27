@@ -36,7 +36,9 @@ namespace TeslaCam.HostedServices
                 {
                     _logger.LogInformation("Starting archiving");
                     
-                    ArchiveRecent();
+                    ArchiveClips(ClipType.Recent);
+                    ArchiveClips(ClipType.Saved);
+                    ArchiveClips(ClipType.Sentry);
                     
                     _logger.LogInformation("Archiving complete");
 
@@ -45,32 +47,9 @@ namespace TeslaCam.HostedServices
             }, stoppingToken);
         }
         
-        private void ArchiveRecent()
+        private void ArchiveClips(ClipType clipType)
         {
-            if (!_options.ClipTypesToProcess.Contains(ClipType.Recent))
-            {
-                _logger.LogInformation("Not archiving Recent clips because they are not enabled");
-                return;
-            }
             
-            _logger.LogInformation("Archiving Recent clips");
-
-            var clips = _fileSystemService
-                .GetClips(ClipType.Recent)
-                .Where(c => c.IsValid)
-                .Where(c => _options.CamerasToProcess.Contains(c.Camera))
-                .Where(c => !_fileSystemService.IsArchived(c))
-                .ToArray();
-
-            if (clips.Length == 0)
-            {
-                _logger.LogInformation("No new Recent clips to archive");
-                return;
-            }
-
-            _logger.LogInformation($"Will archive {clips.Length} clips");
-
-            _fileSystemService.ArchiveClips(clips);
         }
     }
 }
