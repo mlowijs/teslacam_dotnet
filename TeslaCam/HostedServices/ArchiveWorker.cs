@@ -42,8 +42,6 @@ namespace TeslaCam.HostedServices
 
                     await Task.Delay(TimeSpan.FromSeconds(ArchiveIntervalSeconds), stoppingToken);
                 }
-
-                _logger.LogInformation("Stopping archive worker");
             }, stoppingToken);
         }
         
