@@ -124,7 +124,7 @@ namespace TeslaApi
                 : null;
         }
 
-        private async Task<TResponse> DoRequestAsync<TResponse>(HttpMethod method, string url, object payload = null)
+        private async Task<TResponse> DoRequestAsync<TResponse>(HttpMethod method, string url, object? payload = null)
             where TResponse : class
         {
             var requestMessage = new HttpRequestMessage(method, url);
