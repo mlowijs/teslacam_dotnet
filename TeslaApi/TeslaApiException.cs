@@ -1,6 +1,6 @@
 using System;
 
-namespace TeslaCam.Exceptions
+namespace TeslaApi
 {
     public class TeslaApiException : Exception
     {

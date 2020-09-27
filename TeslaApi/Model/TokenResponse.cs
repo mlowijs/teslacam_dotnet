@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace TeslaCam.Model
+namespace TeslaApi.Model
 {
     public class TokenResponse
     {
