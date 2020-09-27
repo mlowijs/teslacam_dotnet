@@ -1,8 +1,6 @@
-﻿using System;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Reflection.Metadata;
 using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using TeslaCam.Contracts;
@@ -16,15 +14,13 @@ namespace TeslaCam.Services
         private const int MegabyteInBytes = 1 * 1024 * 1024;
         
         private readonly IFileSystemService _fileSystemService;
-        private readonly IUploadService _uploadService;
         private readonly TeslaCamOptions _options;
         private readonly ILogger<TeslaCamService> _logger;
 
-        public TeslaCamService(IOptions<TeslaCamOptions> teslaCamOptions, IUploadService uploadService, IFileSystemService fileSystemService, ILogger<TeslaCamService> logger)
+        public TeslaCamService(IOptions<TeslaCamOptions> teslaCamOptions, IFileSystemService fileSystemService, ILogger<TeslaCamService> logger)
         {
             _options = teslaCamOptions.Value;
             
-            _uploadService = uploadService;
             _fileSystemService = fileSystemService;
             _logger = logger;
         }
@@ -66,34 +62,22 @@ namespace TeslaCam.Services
             }
             
             _logger.LogInformation($"Archiving {clipType} clips");
-            
+
             var clips = _fileSystemService
                 .GetClips(clipType)
-        }
+                .Where(c => c.IsValid)
+                .Where(c => _options.CamerasToProcess.Contains(c.Camera))
+                .Where(c => !_fileSystemService.IsArchived(c))
+                .ToArray();
 
-        private void ProcessClipType(ClipType clipType, CancellationToken cancellationToken)
-        {
-            _logger.LogInformation($"Processing '{clipType}' clips");
+            if (clips.Length == 0)
+            {
+                _logger.LogInformation($"No new {clipType} clips to archive");
+                return;
+            }
 
-            var clips = _fileSystemService.GetClips(clipType).ToArray();
-            _logger.LogInformation($"Found {clips.Length} clips to process");
+            var clipsToArchive = new List<Clip>();
             
-            // if (clipType == ClipType.Recent)
-            // {
-            //     var clipsToSkip = clips
-            //         .Where(c => c.Date > DateTimeOffset.Now - TimeSpan.FromMinutes(2));
-            //     
-            //     var clipsToUpload = clips
-            //         .Except(clipsToSkip)
-            //         .Where(IsClipValid)
-            //         .Where(c => _options.CamerasToProcess.Contains(c.Camera));
-            //     
-            //     var clipsToDelete = clips
-            //         .Except(clipsToSkip)
-            //         .Except(clipsToUpload);
-            // }
-            // else
-            // {
             foreach (var eventClips in clips.GroupBy(c => c.EventDate))
             {
                 // Group clips by minute and only take minutes we want to keep
@@ -102,18 +86,14 @@ namespace TeslaCam.Services
                     .OrderByDescending(c => c.Key)
                     .Take(_options.KeepClipsPerEventAmount);
 
-                var clipsToUpload = clipsByMinute
+                clipsToArchive.AddRange(clipsByMinute
                     .SelectMany(cbm => cbm)
-                    .Where(c => _options.CamerasToProcess.Contains(c.Camera));
-                
-                var clipsToDelete = eventClips.Except(clipsToUpload);
+                    .Where(c => _options.CamerasToProcess.Contains(c.Camera)));
             }
-            // }
             
+            _logger.LogInformation($"Will archive {clipsToArchive.Count} {clipType} clips");
             
-            // _uploadService.UploadClipsAsync(clips, cancellationToken);
-            
-            _logger.LogInformation($"Finished processing {clipType} clips");
+            _fileSystemService.ArchiveClips(clipsToArchive);
         }
     }
 }

@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -18,7 +17,6 @@ namespace TeslaCam.Services
         private const string SavedClipsDirectory = "SavedClips";
         private const string SentryClipsDirectory = "SentryClips";
         private const string ArchiveDirectory = "archive";
-        private const string EventDirectoryDateFormat = ""
         
         private readonly ILogger<FileSystemService> _logger;
         private readonly TeslaCamOptions _options;
@@ -84,31 +82,20 @@ namespace TeslaCam.Services
         public void ArchiveClips(IEnumerable<Clip> clips)
         {
             var clipsArray = clips.ToArray();
-
+            
             if (_options.MountingRequired)
                 MountFileSystem();
-
+            
             for (var i = 0; i < clipsArray.Length; i++)
             {
                 var clip = clipsArray[i];
 
                 _logger.LogInformation($"Archiving clip '{clip.File.Name}' ({i + 1}/{clipsArray.Length})");
-             
-                var archivePath = Path.Join(_options.DataDirectory, ArchiveDirectory);
-                // var archiveDirectory = new DirectoryInfo(archivePath);
                 
-                if (!Directory.Exists(archivePath))
-                    Directory.CreateDirectory(archivePath);
-                
-                if (clip.Type == ClipType.Saved || clip.Type == ClipType.Sentry)
-                {
-                    archivePath = Path.Join(archivePath, clip.EventDate!.Value.ToString("s"));
+                var archiveDirectory = GetClipArchiveDirectory(clip);
+                Directory.CreateDirectory(archiveDirectory);
 
-                    if (!Directory.Exists(archivePath))
-                        Directory.CreateDirectory(archivePath);
-                }
-                
-                clip.File.CopyTo(Path.Join(archivePath, clip.File.Name), true);
+                clip.File.CopyTo(Path.Join(archiveDirectory, clip.File.Name), true);
             }
             
             if (_options.MountingRequired)
@@ -117,8 +104,9 @@ namespace TeslaCam.Services
 
         public bool IsArchived(Clip clip)
         {
-            var fileInfo = new FileInfo(Path.Join(_options.DataDirectory, ArchiveDirectory, clip.File.Name));
-                    
+            var archiveDirectory = GetClipArchiveDirectory(clip);
+            var fileInfo = new FileInfo(Path.Join(archiveDirectory, clip.File.Name));
+            
             return fileInfo.Exists && fileInfo.Length == clip.File.Length;
         }
 
@@ -154,6 +142,21 @@ namespace TeslaCam.Services
             };
 
             return Path.Join(_options.MountPoint, TeslaCamDirectory, clipsDirectory);
+        }
+
+        private string? GetClipArchiveDirectory(Clip clip)
+        {
+            switch (clip.Type)
+            {
+                case ClipType.Recent:
+                    return Path.Join(_options.DataDirectory, ArchiveDirectory);
+                case ClipType.Saved:
+                case ClipType.Sentry:
+                    return Path.Join(_options.DataDirectory, ArchiveDirectory, clip.EventDate!.Value.ToString("s"));
+                
+                default:
+                    return null;
+            }
         }
     }
 }
