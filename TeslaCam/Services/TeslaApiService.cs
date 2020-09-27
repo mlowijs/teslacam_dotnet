@@ -25,13 +25,19 @@ namespace TeslaCam.Services
             var vehicles = await _apiClient.ListVehicles();
 
             var vehicle = vehicles.SingleOrDefault(v => v.VehicleIdentificationNumber == _options.Vin);
+            vehicle = await _apiClient.WakeUp(vehicle.Id);
 
-            await _apiClient.WakeUp(vehicle.Id);
+            await _apiClient.SetSentryMode(vehicle.Id, true);
         }
 
-        public Task DisableSentryMode()
+        public async Task DisableSentryMode()
         {
-            throw new System.NotImplementedException();
+            var vehicles = await _apiClient.ListVehicles();
+
+            var vehicle = vehicles.SingleOrDefault(v => v.VehicleIdentificationNumber == _options.Vin);
+            vehicle = await _apiClient.WakeUp(vehicle.Id);
+
+            await _apiClient.SetSentryMode(vehicle.Id, false);
         }
     }
 }
