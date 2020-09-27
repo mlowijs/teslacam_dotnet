@@ -27,6 +27,9 @@ namespace TeslaCam.Services
 
         public void ArchiveRecentClips(CancellationToken cancellationToken)
         {
+            if (cancellationToken.IsCancellationRequested)
+                return;
+            
             if (!_options.ClipTypesToProcess.Contains(ClipType.Recent))
             {
                 _logger.LogInformation("Not archiving Recent clips because they are not enabled");
@@ -55,6 +58,9 @@ namespace TeslaCam.Services
 
         public void ArchiveEventClips(ClipType clipType, CancellationToken cancellationToken)
         {
+            if (cancellationToken.IsCancellationRequested)
+                return;
+            
             if (!_options.ClipTypesToProcess.Contains(clipType))
             {
                 _logger.LogInformation($"Not archiving {clipType} clips because they are not enabled");
