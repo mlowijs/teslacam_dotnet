@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using TeslaCam.Contracts;
@@ -33,16 +34,15 @@ namespace TeslaCam.Services
                 MountFileSystem();
             
             var clipDirectory = new DirectoryInfo(GetDirectoryForClipType(clipType));
-
-            if (!clipDirectory.Exists)
-            {
-                _logger.LogError($"Root directory '{_options.MountPoint}' not found");
-                return Enumerable.Empty<Clip>();
-            }
             
             IEnumerable<Clip> clips;
             
-            if (clipType == ClipType.Recent)
+            if (!clipDirectory.Exists)
+            {
+                _logger.LogError($"Root directory '{_options.MountPoint}' not found");
+                clips = Enumerable.Empty<Clip>();
+            }
+            else if (clipType == ClipType.Recent)
             {
                 clips = clipDirectory.EnumerateFiles()
                     .Select(fileInfo => new Clip(fileInfo, clipType));
@@ -79,7 +79,7 @@ namespace TeslaCam.Services
                 UnmountFileSystem();
         }
 
-        public void ArchiveClips(IEnumerable<Clip> clips)
+        public void ArchiveClips(IEnumerable<Clip> clips, CancellationToken cancellationToken)
         {
             var clipsArray = clips.ToArray();
             
@@ -88,6 +88,9 @@ namespace TeslaCam.Services
             
             for (var i = 0; i < clipsArray.Length; i++)
             {
+                if (cancellationToken.IsCancellationRequested)
+                    break;
+                
                 var clip = clipsArray[i];
 
                 _logger.LogInformation($"Archiving clip '{clip.File.Name}' ({i + 1}/{clipsArray.Length})");

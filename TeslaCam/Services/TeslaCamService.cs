@@ -25,7 +25,7 @@ namespace TeslaCam.Services
             _logger = logger;
         }
 
-        public void ArchiveRecentClips()
+        public void ArchiveRecentClips(CancellationToken cancellationToken)
         {
             if (!_options.ClipTypesToProcess.Contains(ClipType.Recent))
             {
@@ -50,10 +50,10 @@ namespace TeslaCam.Services
 
             _logger.LogInformation($"Will archive {clips.Length} Recent clips");
 
-            _fileSystemService.ArchiveClips(clips);
+            _fileSystemService.ArchiveClips(clips, cancellationToken);
         }
 
-        public void ArchiveEventClips(ClipType clipType)
+        public void ArchiveEventClips(ClipType clipType, CancellationToken cancellationToken)
         {
             if (!_options.ClipTypesToProcess.Contains(clipType))
             {
@@ -64,17 +64,7 @@ namespace TeslaCam.Services
             _logger.LogInformation($"Archiving {clipType} clips");
 
             var clips = _fileSystemService
-                .GetClips(clipType)
-                .Where(c => c.IsValid)
-                .Where(c => _options.CamerasToProcess.Contains(c.Camera))
-                .Where(c => !_fileSystemService.IsArchived(c))
-                .ToArray();
-
-            if (clips.Length == 0)
-            {
-                _logger.LogInformation($"No new {clipType} clips to archive");
-                return;
-            }
+                .GetClips(clipType);
 
             var clipsToArchive = new List<Clip>();
             
@@ -86,14 +76,23 @@ namespace TeslaCam.Services
                     .OrderByDescending(c => c.Key)
                     .Take(_options.KeepClipsPerEventAmount);
 
+                // Filter clips in every minute
                 clipsToArchive.AddRange(clipsByMinute
                     .SelectMany(cbm => cbm)
-                    .Where(c => _options.CamerasToProcess.Contains(c.Camera)));
+                    .Where(c => c.IsValid)
+                    .Where(c => _options.CamerasToProcess.Contains(c.Camera))
+                    .Where(c => !_fileSystemService.IsArchived(c)));
+            }
+            
+            if (clipsToArchive.Count == 0)
+            {
+                _logger.LogInformation($"No new {clipType} clips to archive");
+                return;
             }
             
             _logger.LogInformation($"Will archive {clipsToArchive.Count} {clipType} clips");
             
-            _fileSystemService.ArchiveClips(clipsToArchive);
+            _fileSystemService.ArchiveClips(clipsToArchive, cancellationToken);
         }
     }
 }
