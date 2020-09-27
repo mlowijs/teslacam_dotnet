@@ -45,13 +45,15 @@ namespace TeslaCam.Services
             else if (clipType == ClipType.Recent)
             {
                 clips = clipDirectory.EnumerateFiles()
-                    .Select(fileInfo => new Clip(fileInfo, clipType));
+                    .Select(fileInfo => new Clip(fileInfo, clipType))
+                    .ToArray();
             }
             else
             {
                 clips = clipDirectory.EnumerateDirectories()
                     .SelectMany(dirInfo => dirInfo.EnumerateFiles()
-                        .Select(fileInfo => new Clip(fileInfo, clipType, dirInfo.Name)));
+                        .Select(fileInfo => new Clip(fileInfo, clipType, dirInfo.Name)))
+                    .ToArray();
             }
 
             if (_options.MountingRequired)
