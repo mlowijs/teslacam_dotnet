@@ -23,15 +23,11 @@
       <ProjectReference Include="..\TeslaApi\TeslaApi.csproj" />
       <ProjectReference Include="..\TeslaCam.Contracts\TeslaCam.Contracts.csproj" />
       <ProjectReference Include="..\TeslaCam.Model\TeslaCam.Model.csproj" />
-      <ProjectReference Include="..\TeslaCam.Uploaders.AzureBlob\TeslaCam.Uploaders.AzureBlob.csproj" />
+      <ProjectReference Include="..\TeslaCam.Uploaders.AzureBlobStorage\TeslaCam.Uploaders.AzureBlobStorage.csproj" />
     </ItemGroup>
 
     <ItemGroup>
       <Compile Remove="Model\ApplicationData.cs" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="Uploaders" />
     </ItemGroup>
 
 </Project>

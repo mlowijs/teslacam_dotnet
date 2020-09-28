@@ -10,7 +10,7 @@ using TeslaCam.HostedServices;
 using TeslaCam.Notifiers;
 using TeslaCam.Options;
 using TeslaCam.Services;
-using TeslaCam.Uploaders;
+using TeslaCam.Uploaders.AzureBlobStorage;
 
 namespace TeslaCam
 {
