@@ -16,5 +16,7 @@ namespace TeslaCam.Options
         public int KeepClipsPerEventAmount { get; set; } = 10;
 
         public TimeSpan CleanTime { get; set; } = TimeSpan.FromHours(2);
+
+        public bool ManageSentryMode { get; set; } = false;
     }
 }
