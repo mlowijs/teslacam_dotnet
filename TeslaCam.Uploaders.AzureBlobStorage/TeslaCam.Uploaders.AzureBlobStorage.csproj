@@ -9,4 +9,8 @@
       <ProjectReference Include="..\TeslaCam.Contracts\TeslaCam.Contracts.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Include="Azure.Storage.Blobs" Version="12.6.0" />
+    </ItemGroup>
+
 </Project>

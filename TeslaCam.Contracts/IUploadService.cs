@@ -7,6 +7,6 @@ namespace TeslaCam.Contracts
 {
     public interface IUploadService
     {
-        Task UploadClipsAsync(IEnumerable<Clip> clips, CancellationToken cancellationToken);
+        Task UploadClipsAsync(CancellationToken cancellationToken);
     }
 }

@@ -16,7 +16,7 @@ namespace TeslaCam.Services
             _uploaders = uploaders.ToDictionary(u => u.Name);
         }
 
-        public Task UploadClipsAsync(IEnumerable<Clip> clips, CancellationToken cancellationToken)
+        public Task UploadClipsAsync(CancellationToken cancellationToken)
         {
             throw new System.NotImplementedException();
         }

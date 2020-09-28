@@ -1,7 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -17,7 +20,13 @@ namespace TeslaCam.Services
         private const string RecentClipsDirectory = "RecentClips";
         private const string SavedClipsDirectory = "SavedClips";
         private const string SentryClipsDirectory = "SentryClips";
+        private const string TeslaCamDateTimeFormat = "yyyy-MM-dd_HH-mm-ss";
+        
         private const string ArchiveDirectory = "archive";
+        private const string ArchiveDateFormat = "yyyyMMddHHmmss";
+
+        private static readonly Regex TeslaCamDateTimeCameraRegex =
+            new Regex(@"^(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2})-(\w+)\.mp4$", RegexOptions.Compiled);
         
         private readonly ILogger<FileSystemService> _logger;
         private readonly TeslaCamOptions _options;
@@ -36,7 +45,7 @@ namespace TeslaCam.Services
             var clipDirectory = new DirectoryInfo(GetDirectoryForClipType(clipType));
             
             IEnumerable<Clip> clips;
-            
+
             if (!clipDirectory.Exists)
             {
                 _logger.LogError($"Root directory '{_options.MountPoint}' not found");
@@ -45,14 +54,14 @@ namespace TeslaCam.Services
             else if (clipType == ClipType.Recent)
             {
                 clips = clipDirectory.EnumerateFiles()
-                    .Select(fileInfo => new Clip(fileInfo, clipType))
+                    .Select(fileInfo => CreateClip(fileInfo, clipType))
                     .ToArray();
             }
             else
             {
                 clips = clipDirectory.EnumerateDirectories()
                     .SelectMany(dirInfo => dirInfo.EnumerateFiles()
-                        .Select(fileInfo => new Clip(fileInfo, clipType, dirInfo.Name)))
+                        .Select(fileInfo => CreateClip(fileInfo, clipType, dirInfo.Name)))
                     .ToArray();
             }
 
@@ -62,6 +71,32 @@ namespace TeslaCam.Services
             return clips;
         }
 
+        public void ArchiveClips(IEnumerable<Clip> clips, CancellationToken cancellationToken)
+        {
+            var archiveDirectory = Path.Join(_options.DataDirectory, ArchiveDirectory);
+            Directory.CreateDirectory(archiveDirectory);
+            
+            var clipsArray = clips.ToArray();
+
+            if (_options.MountingRequired)
+                MountFileSystem();
+            
+            for (var i = 0; i < clipsArray.Length; i++)
+            {
+                if (cancellationToken.IsCancellationRequested)
+                    break;
+                
+                var clip = clipsArray[i];
+
+                _logger.LogInformation($"Archiving clip '{clip.File.Name}' ({i + 1}/{clipsArray.Length})");
+
+                clip.File.CopyTo(GetClipArchivePath(clip), true);
+            }
+            
+            if (_options.MountingRequired)
+                UnmountFileSystem();
+        }
+        
         public void DeleteClips(IEnumerable<Clip> clips)
         {
             var clipsArray = clips.ToArray();
@@ -81,38 +116,11 @@ namespace TeslaCam.Services
                 UnmountFileSystem();
         }
 
-        public void ArchiveClips(IEnumerable<Clip> clips, CancellationToken cancellationToken)
-        {
-            var clipsArray = clips.ToArray();
-            
-            if (_options.MountingRequired)
-                MountFileSystem();
-            
-            for (var i = 0; i < clipsArray.Length; i++)
-            {
-                if (cancellationToken.IsCancellationRequested)
-                    break;
-                
-                var clip = clipsArray[i];
-
-                _logger.LogInformation($"Archiving clip '{clip.File.Name}' ({i + 1}/{clipsArray.Length})");
-                
-                var archiveDirectory = GetClipArchiveDirectory(clip);
-                Directory.CreateDirectory(archiveDirectory);
-
-                clip.File.CopyTo(Path.Join(archiveDirectory, clip.File.Name), true);
-            }
-            
-            if (_options.MountingRequired)
-                UnmountFileSystem();
-        }
-
         public bool IsArchived(Clip clip)
         {
-            var archiveDirectory = GetClipArchiveDirectory(clip);
-            var fileInfo = new FileInfo(Path.Join(archiveDirectory, clip.File.Name));
+            var archiveClip = new FileInfo(GetClipArchivePath(clip));
             
-            return fileInfo.Exists && fileInfo.Length == clip.File.Length;
+            return archiveClip.Exists && archiveClip.Length == clip.File.Length;
         }
 
         private void MountFileSystem(bool readWrite = false)
@@ -149,19 +157,74 @@ namespace TeslaCam.Services
             return Path.Join(_options.MountPoint, TeslaCamDirectory, clipsDirectory);
         }
 
-        private string? GetClipArchiveDirectory(Clip clip)
+        private string GetClipArchivePath(Clip clip)
         {
-            switch (clip.Type)
+            return Path.Join(_options.DataDirectory, ArchiveDirectory, GetArchiveFileName(clip));
+        }
+        
+        private static Clip CreateClip(FileInfo fileInfo, ClipType clipType, string? eventDirectoryName = null)
+        {
+            var clip = new Clip
             {
-                case ClipType.Recent:
-                    return Path.Join(_options.DataDirectory, ArchiveDirectory);
-                case ClipType.Saved:
-                case ClipType.Sentry:
-                    return Path.Join(_options.DataDirectory, ArchiveDirectory, clip.EventDate!.Value.ToString("s"));
-                
-                default:
-                    return null;
+                File = fileInfo,
+                Type = clipType,
+            };
+
+            if (eventDirectoryName != null)
+            {
+                clip.EventDate = DateTimeOffset.ParseExact(eventDirectoryName, TeslaCamDateTimeFormat, null,
+                    DateTimeStyles.AssumeUniversal);
             }
+            
+            var regexMatch = TeslaCamDateTimeCameraRegex.Match(fileInfo.Name);
+
+            if (!regexMatch.Success)
+                return clip;
+
+            clip.Date = DateTimeOffset.ParseExact(regexMatch.Groups[1].Value, TeslaCamDateTimeFormat, null,
+                DateTimeStyles.AssumeUniversal);
+
+            clip.Camera = regexMatch.Groups[2].Value switch
+            {
+                "front" => Camera.Front,
+                "left_repeater" => Camera.LeftRepeater,
+                "right_repeater" => Camera.RightRepeater,
+                "back" => Camera.Back,
+                _ => Camera.Unknown
+            };
+            
+            return clip;
+        }
+
+        private static Clip CreateArchiveClip(FileInfo fileInfo)
+        {
+            var fileNameParts = Path.GetFileNameWithoutExtension(fileInfo.Name).Split("_");
+
+            var clip = new Clip
+            {
+                File = fileInfo,
+                Date = DateTimeOffset.ParseExact(fileNameParts[0], ArchiveDateFormat, null,
+                    DateTimeStyles.AssumeUniversal),
+                
+                Type = Enum.Parse<ClipType>(fileNameParts[1]),
+                Camera = Enum.Parse<Camera>(fileNameParts[2]),
+                
+                EventDate = fileNameParts.Length == 4
+                    ? DateTimeOffset.ParseExact(fileNameParts[3], ArchiveDateFormat, null,
+                        DateTimeStyles.AssumeUniversal)
+                    : default
+            };
+
+            return clip;
+        }
+        
+        private static string GetArchiveFileName(Clip clip)
+        {
+            var baseName = $"{clip.Date.ToString(ArchiveDateFormat)}_{clip.Type:D}_{clip.Camera:D}";
+
+            return clip.Type == ClipType.Recent
+                ? $"{baseName}.mp4"
+                : $"{baseName}_{clip.EventDate!.Value.ToString(ArchiveDateFormat)}.mp4";
         }
     }
 }
