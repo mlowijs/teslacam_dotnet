@@ -10,5 +10,7 @@ namespace TeslaCam.Contracts
         void DeleteClips(IEnumerable<Clip> clips);
         void ArchiveClips(IEnumerable<Clip> clips, CancellationToken cancellationToken);
         bool IsArchived(Clip clip);
+
+        IEnumerable<Clip> GetArchivedClips();
     }
 }

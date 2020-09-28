@@ -123,6 +123,15 @@ namespace TeslaCam.Services
             return archiveClip.Exists && archiveClip.Length == clip.File.Length;
         }
 
+        public IEnumerable<Clip> GetArchivedClips()
+        {
+            var archiveDirectory = new DirectoryInfo(Path.Join(_options.DataDirectory, ArchiveDirectory));
+
+            return archiveDirectory
+                .EnumerateFiles()
+                .Select(CreateArchiveClip);
+        }
+
         private void MountFileSystem(bool readWrite = false)
         {
             _logger.LogDebug($"Mounting '{_options.MountPoint}'");
