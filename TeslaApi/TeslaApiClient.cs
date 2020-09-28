@@ -5,7 +5,6 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
-using TeslaApi.Converters;
 using TeslaApi.Model;
 
 namespace TeslaApi
@@ -40,7 +39,7 @@ namespace TeslaApi
             _expiresAt = DateTimeOffset.UtcNow.AddDays(1);
         }
 
-        public async Task<IEnumerable<TeslaVehicle>> ListVehicles()
+        public async Task<IEnumerable<TeslaVehicle>> ListVehiclesAsync()
         {
             await Authenticate();
 

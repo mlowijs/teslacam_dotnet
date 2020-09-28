@@ -11,7 +11,7 @@ namespace TeslaCam.Services
         private const int PingAttempts = 3;
         private const int PingTimeout = 1000;
         
-        private static readonly IPAddress[] _ipAddresses =
+        private static readonly IPAddress[] IpAddresses =
         {
             // Cloudflare
             IPAddress.Parse("1.1.1.1"), 
@@ -40,7 +40,7 @@ namespace TeslaCam.Services
             
             for (var i = 0; i < PingAttempts; i++)
             {
-                var ipAddress = _ipAddresses[_random.Next(0, _ipAddresses.Length)];
+                var ipAddress = IpAddresses[_random.Next(0, IpAddresses.Length)];
 
                 var reply = await ping.SendPingAsync(ipAddress, PingTimeout);
 

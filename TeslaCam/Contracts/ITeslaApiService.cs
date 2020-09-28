@@ -4,7 +4,7 @@ namespace TeslaCam.Contracts
 {
     public interface ITeslaApiService
     {
-        Task EnableSentryMode();
-        Task DisableSentryMode();
+        Task EnableSentryModeAsync();
+        Task DisableSentryModeAsync();
     }
 }

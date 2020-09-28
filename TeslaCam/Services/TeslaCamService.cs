@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -11,8 +13,6 @@ namespace TeslaCam.Services
 {
     public class TeslaCamService : ITeslaCamService
     {
-        private const int MegabyteInBytes = 1 * 1024 * 1024;
-        
         private readonly IFileSystemService _fileSystemService;
         private readonly TeslaCamOptions _options;
         private readonly ILogger<TeslaCamService> _logger;
@@ -40,7 +40,7 @@ namespace TeslaCam.Services
 
             var clips = _fileSystemService
                 .GetClips(ClipType.Recent)
-                .Where(c => c.IsValid)
+                .Where(IsClipValid)
                 .Where(c => _options.CamerasToProcess.Contains(c.Camera))
                 .Where(c => !_fileSystemService.IsArchived(c))
                 .ToArray();
@@ -85,7 +85,7 @@ namespace TeslaCam.Services
                 // Filter clips in every minute
                 clipsToArchive.AddRange(clipsByMinute
                     .SelectMany(cbm => cbm)
-                    .Where(c => c.IsValid)
+                    .Where(IsClipValid)
                     .Where(c => _options.CamerasToProcess.Contains(c.Camera))
                     .Where(c => !_fileSystemService.IsArchived(c)));
             }
@@ -99,6 +99,13 @@ namespace TeslaCam.Services
             _logger.LogInformation($"Will archive {clipsToArchive.Count} {clipType} clips");
             
             _fileSystemService.ArchiveClips(clipsToArchive, cancellationToken);
+        }
+
+        private static bool IsClipValid(Clip clip)
+        {
+            return clip.Date != DateTimeOffset.MinValue
+                   && clip.Camera != Camera.Unknown
+                   && clip.File.Length > Constants.MegabyteInBytes;
         }
     }
 }
