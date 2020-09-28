@@ -23,4 +23,8 @@
       <ProjectReference Include="..\TeslaApi\TeslaApi.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Compile Remove="Model\ApplicationData.cs" />
+    </ItemGroup>
+
 </Project>
