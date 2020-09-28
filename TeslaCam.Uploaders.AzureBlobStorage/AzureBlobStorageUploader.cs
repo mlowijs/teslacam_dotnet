@@ -19,7 +19,7 @@ namespace TeslaCam.Uploaders.AzureBlobStorage
             _blobContainerClient = new BlobContainerClient(_options.ConnectionString, _options.ContainerName);
         }
         
-        public string Name => "azureBlob";
+        public string Name => "azureBlobStorage";
         
         public async Task UploadClipAsync(Clip clip, CancellationToken cancellationToken)
         {
