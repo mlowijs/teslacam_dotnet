@@ -21,25 +21,20 @@ namespace TeslaCam.HostedServices
             _teslaCamService = teslaCamService;
         }
 
-        protected override Task ExecuteAsync(CancellationToken stoppingToken)
+        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            return Task.Run(async () =>
+            while (!stoppingToken.IsCancellationRequested)
             {
-                _logger.LogInformation("Starting archive worker");
-
-                while (!stoppingToken.IsCancellationRequested)
-                {
-                    _logger.LogInformation("Starting archiving");
+                _logger.LogInformation("Starting archiving");
                     
-                    _teslaCamService.ArchiveRecentClips(stoppingToken);
-                    _teslaCamService.ArchiveEventClips(ClipType.Saved, stoppingToken);
-                    _teslaCamService.ArchiveEventClips(ClipType.Sentry, stoppingToken);
+                _teslaCamService.ArchiveRecentClips(stoppingToken);
+                _teslaCamService.ArchiveEventClips(ClipType.Saved, stoppingToken);
+                _teslaCamService.ArchiveEventClips(ClipType.Sentry, stoppingToken);
                     
-                    _logger.LogInformation("Archiving complete");
+                _logger.LogInformation("Archiving complete");
 
-                    await Task.Delay(TimeSpan.FromSeconds(ArchiveIntervalSeconds), stoppingToken);
-                }
-            }, stoppingToken);
+                await Task.Delay(TimeSpan.FromSeconds(ArchiveIntervalSeconds), stoppingToken);
+            }
         }
     }
 }
