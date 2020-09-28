@@ -54,7 +54,7 @@ namespace TeslaCam
                     services.AddSingleton<IKernelService, KernelService>();
                     services.AddSingleton<ITeslaApiService, TeslaApiService>();
 
-                    services.AddSingleton<IUploader, AzureBlobStorageUploader>();
+                    services.AddAzureBlobStorageUploader();
 
                     services.AddSingleton<INotifier, PushoverNotifier>();
 

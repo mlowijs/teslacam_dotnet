@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Threading;
+using System.Threading.Tasks;
 using TeslaCam.Model;
 
 namespace TeslaCam.Contracts
@@ -7,6 +8,6 @@ namespace TeslaCam.Contracts
     {
         string Name { get; }
 
-        Task UploadClipAsync(Clip clip);
+        Task UploadClipAsync(Clip clip, CancellationToken cancellationToken);
     }
 }

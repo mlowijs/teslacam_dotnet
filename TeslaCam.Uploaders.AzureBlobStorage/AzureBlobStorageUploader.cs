@@ -1,4 +1,7 @@
-﻿using System.Threading.Tasks;
+﻿using System.Threading;
+using System.Threading.Tasks;
+using Azure.Storage.Blobs;
+using Microsoft.Extensions.Options;
 using TeslaCam.Contracts;
 using TeslaCam.Model;
 
@@ -6,11 +9,23 @@ namespace TeslaCam.Uploaders.AzureBlobStorage
 {
     public class AzureBlobStorageUploader : IUploader
     {
+        private readonly AzureBlobStorageOptions _options;
+        private readonly BlobContainerClient _blobContainerClient;
+        
+        public AzureBlobStorageUploader(IOptions<AzureBlobStorageOptions> azureBlobStorageOptions)
+        {
+            _options = azureBlobStorageOptions.Value;
+
+            _blobContainerClient = new BlobContainerClient(_options.ConnectionString, _options.ContainerName);
+        }
+        
         public string Name => "azureBlob";
         
-        public Task UploadClipAsync(Clip clip)
+        public async Task UploadClipAsync(Clip clip, CancellationToken cancellationToken)
         {
-            throw new System.NotImplementedException();
+            await using var fileStream = clip.File.OpenRead();
+
+            await _blobContainerClient.UploadBlobAsync(clip.File.Name, fileStream, cancellationToken);
         }
     }
 }

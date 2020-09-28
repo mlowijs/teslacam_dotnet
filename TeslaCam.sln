@@ -12,6 +12,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TeslaCam.Model", "TeslaCam.
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Uploaders", "Uploaders", "{A84B68D3-960E-4F73-BA0D-E09422560ED7}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TeslaCam.Extensions", "TeslaCam.Extensions\TeslaCam.Extensions.csproj", "{CADD9F76-D615-4587-AFC9-2922F2C529F1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -38,6 +40,10 @@ Global
 		{7441BCC4-E3D1-4694-8846-1A57369887C0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7441BCC4-E3D1-4694-8846-1A57369887C0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7441BCC4-E3D1-4694-8846-1A57369887C0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CADD9F76-D615-4587-AFC9-2922F2C529F1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CADD9F76-D615-4587-AFC9-2922F2C529F1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CADD9F76-D615-4587-AFC9-2922F2C529F1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CADD9F76-D615-4587-AFC9-2922F2C529F1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{BC8B026F-45AE-4201-BEFE-519904259C19} = {A84B68D3-960E-4F73-BA0D-E09422560ED7}

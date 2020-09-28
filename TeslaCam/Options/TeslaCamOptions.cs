@@ -18,5 +18,7 @@ namespace TeslaCam.Options
         public TimeSpan CleanTime { get; set; } = TimeSpan.FromHours(2);
 
         public bool ManageSentryMode { get; set; } = false;
+
+        public string Uploader { get; set; }
     }
 }
