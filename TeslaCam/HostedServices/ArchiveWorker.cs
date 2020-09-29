@@ -25,13 +25,13 @@ namespace TeslaCam.HostedServices
         {
             while (!stoppingToken.IsCancellationRequested)
             {
-                _logger.LogInformation("Starting archiving");
+                _logger.LogDebug("Starting archiving");
                     
                 _teslaCamService.ArchiveRecentClips(stoppingToken);
                 _teslaCamService.ArchiveEventClips(ClipType.Saved, stoppingToken);
                 _teslaCamService.ArchiveEventClips(ClipType.Sentry, stoppingToken);
                     
-                _logger.LogInformation("Archiving complete");
+                _logger.LogDebug("Finished archiving");
 
                 await Task.Delay(TimeSpan.FromSeconds(ArchiveIntervalSeconds), stoppingToken);
             }

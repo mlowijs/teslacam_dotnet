@@ -26,8 +26,11 @@ namespace TeslaCam.HostedServices
             {
                 await Task.Delay(TimeSpan.FromSeconds(UploadIntervalSeconds), stoppingToken);
                 
-                _logger.LogInformation("Starting uploading");
+                _logger.LogDebug("Starting uploading");
+                
                 await _uploadService.UploadClipsAsync(stoppingToken);
+                
+                _logger.LogDebug("Finished uploading");
             }
         }
     }
