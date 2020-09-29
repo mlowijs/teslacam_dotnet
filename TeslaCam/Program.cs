@@ -58,10 +58,11 @@ namespace TeslaCam
 
                     services.AddSingleton<INotifier, PushoverNotifier>();
 
-                    // services.AddHostedService<ArchiveWorker>();
+                    services.AddHostedService<ArchiveWorker>();
+                    services.AddHostedService<UploadWorker>();
+                    
                     // services.AddHostedService<CleanWorker>();
-                    services.AddHostedService<TestWorker>();
-                    // services.AddHostedService<UploadWorker>();
+                    // services.AddHostedService<TestWorker>();
                 })
                 .UseSystemd();
         }
