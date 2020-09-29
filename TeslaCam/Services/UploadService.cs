@@ -29,6 +29,9 @@ namespace TeslaCam.Services
 
         public async Task UploadClipsAsync(CancellationToken cancellationToken)
         {
+            if (cancellationToken.IsCancellationRequested)
+                return;
+            
             var clips = _fileSystemService
                 .GetArchivedClips()
                 .ToArray();

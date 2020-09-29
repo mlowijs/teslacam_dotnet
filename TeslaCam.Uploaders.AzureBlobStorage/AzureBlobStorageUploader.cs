@@ -9,14 +9,13 @@ namespace TeslaCam.Uploaders.AzureBlobStorage
 {
     public class AzureBlobStorageUploader : IUploader
     {
-        private readonly AzureBlobStorageOptions _options;
         private readonly BlobContainerClient _blobContainerClient;
         
         public AzureBlobStorageUploader(IOptions<AzureBlobStorageOptions> azureBlobStorageOptions)
         {
-            _options = azureBlobStorageOptions.Value;
+            var options = azureBlobStorageOptions.Value;
 
-            _blobContainerClient = new BlobContainerClient(_options.ConnectionString, _options.ContainerName);
+            _blobContainerClient = new BlobContainerClient(options.ConnectionString, options.ContainerName);
         }
         
         public string Name => "azureBlobStorage";

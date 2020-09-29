@@ -1,7 +1,5 @@
-﻿using System.Collections.Generic;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
-using TeslaCam.Model;
 
 namespace TeslaCam.Contracts
 {

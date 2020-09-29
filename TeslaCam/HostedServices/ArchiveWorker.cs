@@ -10,7 +10,7 @@ namespace TeslaCam.HostedServices
 {
     public class ArchiveWorker : BackgroundService
     {
-        private const int ArchiveIntervalSeconds = 10;
+        private const int ArchiveIntervalSeconds = 15;
         
         private readonly ILogger<ArchiveWorker> _logger;
         private readonly ITeslaCamService _teslaCamService;

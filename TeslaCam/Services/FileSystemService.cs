@@ -48,7 +48,7 @@ namespace TeslaCam.Services
 
             if (!clipDirectory.Exists)
             {
-                _logger.LogError($"Root directory '{_options.MountPoint}' not found");
+                _logger.LogError($"Clip directory '{clipDirectory}' not found");
                 clips = Enumerable.Empty<Clip>();
             }
             else if (clipType == ClipType.Recent)

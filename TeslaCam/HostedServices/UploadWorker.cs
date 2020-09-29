@@ -25,7 +25,7 @@ namespace TeslaCam.HostedServices
             while (!stoppingToken.IsCancellationRequested)
             {
                 await Task.Delay(TimeSpan.FromSeconds(UploadIntervalSeconds), stoppingToken);
-             
+                
                 _logger.LogInformation("Starting uploading");
                 await _uploadService.UploadClipsAsync(stoppingToken);
             }

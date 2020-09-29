@@ -16,20 +16,26 @@ namespace TeslaCam
 {
     public class Program
     {
-        private static async Task Main()
+        private const string ConfigurationFilePath = "/etc/teslacam.json";
+        
+        private static async Task Main(string[] args)
         {
-            var hostBuilder = GetHostBuilder()
+            var configurationFilePath = args.Length > 0
+                ? args[0]
+                : ConfigurationFilePath;
+
+            var hostBuilder = GetHostBuilder(configurationFilePath)
                 .Build();
-            
+
             await hostBuilder.RunAsync();
         }
 
-        private static IHostBuilder GetHostBuilder()
+        private static IHostBuilder GetHostBuilder(string configurationFilePath)
         {
             return new HostBuilder()
                 .ConfigureAppConfiguration(builder =>
                 {
-                    builder.AddJsonFile("appsettings.json", false)
+                    builder.AddJsonFile(configurationFilePath, false)
                         .AddEnvironmentVariables();
                 })
                 .ConfigureLogging(builder =>
