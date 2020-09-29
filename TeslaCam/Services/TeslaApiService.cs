@@ -21,8 +21,7 @@ namespace TeslaCam.Services
             _logger = logger;
             _options = teslaApiOptions.Value;
             
-            // _apiClient = new TeslaApiClient(_options.UserName, _options.Password);
-            _apiClient = new TeslaApiClient("qts-1bdc45280fe8fcc95efefad0678de7e035eb0335983e150bc111b21d1126754b");
+            _apiClient = new TeslaApiClient(_options.UserName, _options.Password);
         }
 
         public async Task EnableSentryModeAsync()
