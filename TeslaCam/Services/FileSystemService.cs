@@ -48,7 +48,7 @@ namespace TeslaCam.Services
 
             if (!clipDirectory.Exists)
             {
-                _logger.LogError($"Clip directory '{clipDirectory}' not found");
+                _logger.LogWarning($"Clip directory '{clipDirectory}' not found");
                 clips = Enumerable.Empty<Clip>();
             }
             else if (clipType == ClipType.Recent)
@@ -97,23 +97,10 @@ namespace TeslaCam.Services
                 UnmountFileSystem();
         }
         
-        public void DeleteClips(IEnumerable<Clip> clips)
+        public void DeleteClip(Clip clip)
         {
-            var clipsArray = clips.ToArray();
-
-            if (_options.MountingRequired)
-                MountFileSystem(true);
-            
-            for (var i = 0; i < clipsArray.Length; i++)
-            {
-                var clip = clipsArray[i];
-                
-                _logger.LogInformation($"Deleting clip '{clip.File.Name}' ({i + 1}/{clipsArray.Length})");
-                clip.File.Delete();
-            }
-            
-            if (_options.MountingRequired)
-                UnmountFileSystem();
+            _logger.LogInformation($"Deleting clip '{clip.File.Name}'");
+            clip.File.Delete();
         }
 
         public bool IsArchived(Clip clip)

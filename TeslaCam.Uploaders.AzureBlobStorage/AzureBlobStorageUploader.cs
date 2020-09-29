@@ -19,13 +19,17 @@ namespace TeslaCam.Uploaders.AzureBlobStorage
         }
         
         public string Name => "azureBlobStorage";
-        
-        public async Task UploadClipAsync(Clip clip, CancellationToken cancellationToken)
+        public bool RequiresInternet => true;
+
+        public async Task<bool> UploadClipAsync(Clip clip, CancellationToken cancellationToken)
         {
             var blobName = @$"{clip.Date:yyyy\/MM\/dd}/{clip.File.Name}";
             
             await using var fileStream = clip.File.OpenRead();
+            
             await _blobContainerClient.UploadBlobAsync(blobName, fileStream, cancellationToken);
+
+            return true;
         }
     }
 }

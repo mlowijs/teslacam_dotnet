@@ -7,7 +7,7 @@ namespace TeslaCam.Contracts
     public interface IFileSystemService
     {
         IEnumerable<Clip> GetClips(ClipType clipType);
-        void DeleteClips(IEnumerable<Clip> clips);
+        void DeleteClip(Clip clip);
         void ArchiveClips(IEnumerable<Clip> clips, CancellationToken cancellationToken);
         bool IsArchived(Clip clip);
 

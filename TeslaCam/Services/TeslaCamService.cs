@@ -32,7 +32,7 @@ namespace TeslaCam.Services
             
             if (!_options.ClipTypesToProcess.Contains(ClipType.Recent))
             {
-                _logger.LogInformation("Not archiving Recent clips because they are not enabled");
+                _logger.LogDebug("Not archiving Recent clips because they are not enabled");
                 return;
             }
             
@@ -63,7 +63,7 @@ namespace TeslaCam.Services
             
             if (!_options.ClipTypesToProcess.Contains(clipType))
             {
-                _logger.LogInformation($"Not archiving {clipType} clips because they are not enabled");
+                _logger.LogDebug($"Not archiving {clipType} clips because they are not enabled");
                 return;
             }
             

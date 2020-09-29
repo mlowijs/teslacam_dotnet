@@ -31,7 +31,7 @@ namespace TeslaCam.Services
             _random = new Random();
         }
         
-        public async Task<bool> IsNetworkOnlineAsync()
+        public async Task<bool> IsConnectedToInternet()
         {
             if (!NetworkInterface.GetIsNetworkAvailable())
                 return false;

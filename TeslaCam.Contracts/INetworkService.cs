@@ -4,6 +4,6 @@ namespace TeslaCam.Contracts
 {
     public interface INetworkService
     {
-        Task<bool> IsNetworkOnlineAsync();
+        Task<bool> IsConnectedToInternet();
     }
 }
