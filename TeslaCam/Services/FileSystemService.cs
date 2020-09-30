@@ -48,7 +48,7 @@ namespace TeslaCam.Services
 
             if (!clipDirectory.Exists)
             {
-                _logger.LogWarning($"Clip directory '{clipDirectory}' not found");
+                _logger.LogDebug($"Clip directory '{clipDirectory}' not found");
                 clips = Enumerable.Empty<Clip>();
             }
             else if (clipType == ClipType.Recent)
@@ -102,12 +102,18 @@ namespace TeslaCam.Services
             _logger.LogInformation($"Deleting clip '{clip.File.Name}'");
             clip.File.Delete();
         }
+        
+        public void TruncateClip(Clip clip)
+        {
+            _logger.LogInformation($"Truncating clip '{clip.File.Name}'");
+            clip.File.Open(FileMode.Truncate).Close();
+        }
 
         public bool IsArchived(Clip clip)
         {
             var archiveClip = new FileInfo(GetClipArchivePath(clip));
-            
-            return archiveClip.Exists && archiveClip.Length == clip.File.Length;
+
+            return archiveClip.Exists;
         }
 
         public IEnumerable<Clip> GetArchivedClips()
@@ -116,6 +122,7 @@ namespace TeslaCam.Services
 
             return archiveDirectory
                 .EnumerateFiles()
+                .Where(fi => fi.Length != 0)
                 .Select(CreateArchiveClip);
         }
 

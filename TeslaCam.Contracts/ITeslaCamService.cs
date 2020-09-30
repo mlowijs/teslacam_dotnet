@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 using TeslaCam.Model;
 
 namespace TeslaCam.Contracts
@@ -7,5 +8,7 @@ namespace TeslaCam.Contracts
     {
         void ArchiveRecentClips(CancellationToken cancellationToken);
         void ArchiveEventClips(ClipType clipType, CancellationToken cancellationToken);
+
+        void Clean(CancellationToken cancellationToken);
     }
 }

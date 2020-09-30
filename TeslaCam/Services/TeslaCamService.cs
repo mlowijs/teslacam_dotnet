@@ -15,13 +15,15 @@ namespace TeslaCam.Services
         private readonly IFileSystemService _fileSystemService;
         private readonly TeslaCamOptions _options;
         private readonly ILogger<TeslaCamService> _logger;
+        private readonly IKernelService _kernelService;
 
-        public TeslaCamService(IOptions<TeslaCamOptions> teslaCamOptions, IFileSystemService fileSystemService, ILogger<TeslaCamService> logger)
+        public TeslaCamService(IOptions<TeslaCamOptions> teslaCamOptions, IFileSystemService fileSystemService, ILogger<TeslaCamService> logger, IKernelService kernelService)
         {
             _options = teslaCamOptions.Value;
             
             _fileSystemService = fileSystemService;
             _logger = logger;
+            _kernelService = kernelService;
         }
 
         public void ArchiveRecentClips(CancellationToken cancellationToken)
@@ -98,6 +100,15 @@ namespace TeslaCam.Services
             _logger.LogInformation($"Will archive {clipsToArchive.Count} {clipType} clips");
             
             _fileSystemService.ArchiveClips(clipsToArchive, cancellationToken);
+        }
+
+        public void Clean(CancellationToken cancellationToken)
+        {
+            _kernelService.RemoveMassStorageGadgetModule();
+            
+            // do file cleanup
+            
+            _kernelService.LoadMassStorageGadgetModule();
         }
 
         private static bool IsClipValid(Clip clip)

@@ -14,10 +14,10 @@ namespace TeslaCam.Services
         private readonly TeslaCamOptions _options;
         private readonly IFileSystemService _fileSystemService;
         private readonly ILogger<UploadService> _logger;
+        private readonly INetworkService _networkService;
         
         private readonly Dictionary<string, IUploader> _uploaders;
-        private readonly INetworkService _networkService;
-
+        
         public UploadService(IEnumerable<IUploader> uploaders, IFileSystemService fileSystemService,
             IOptions<TeslaCamOptions> teslaCamOptions, ILogger<UploadService> logger, INetworkService networkService)
         {
@@ -33,12 +33,21 @@ namespace TeslaCam.Services
         {
             if (cancellationToken.IsCancellationRequested)
                 return;
+
+            if (!_uploaders.TryGetValue(_options.Uploader, out var uploader))
+                return;
+            
+            _logger.LogInformation("Uploading archived clips");
             
             var clips = _fileSystemService
                 .GetArchivedClips()
                 .ToArray();
-
-            var uploader = _uploaders[_options.Uploader];
+            
+            if (clips.Length == 0)
+            {
+                _logger.LogInformation("No archived clips to upload");
+                return;
+            }
 
             if (uploader.RequiresInternet && !await _networkService.IsConnectedToInternet())
             {
@@ -53,10 +62,8 @@ namespace TeslaCam.Services
                 _logger.LogInformation($"Uploading clip '{clip.File.Name}' ({i + 1}/{clips.Length})");
 
                 if (await uploader.UploadClipAsync(clip, cancellationToken))
-                    _fileSystemService.DeleteClip(clip);
+                    _fileSystemService.TruncateClip(clip);
             }
-            
-            _logger.LogInformation("Uploading archived clips");
         }
     }
 }

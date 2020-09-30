@@ -9,8 +9,6 @@ namespace TeslaCam.Options
         public bool MountingRequired { get; set; } = true;
         public string DataDirectory { get; set; } = "/var/lib/teslacam";
         
-        public int UploadInterval { get; set; } = 30;
-        
         public ClipType[] ClipTypesToProcess { get; set; } = new ClipType[0];
         public Camera[] CamerasToProcess { get; set; } = {Camera.Back, Camera.Front, Camera.LeftRepeater, Camera.RightRepeater};
         public int KeepClipsPerEventAmount { get; set; } = 10;
@@ -19,6 +17,6 @@ namespace TeslaCam.Options
 
         public bool ManageSentryMode { get; set; } = false;
 
-        public string Uploader { get; set; }
+        public string Uploader { get; set; } = "";
     }
 }

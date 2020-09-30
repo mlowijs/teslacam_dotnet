@@ -1,17 +1,20 @@
+using System.Diagnostics;
 using TeslaCam.Contracts;
 
 namespace TeslaCam.Services
 {
     public class KernelService : IKernelService
     {
+        private const string MassStorageGadgetModuleName = "g_mass_storage";
+        
         public void RemoveMassStorageGadgetModule()
         {
-            throw new System.NotImplementedException();
+            Process.Start("/usr/bin/rmmod", MassStorageGadgetModuleName).WaitForExit();
         }
 
         public void LoadMassStorageGadgetModule()
         {
-            throw new System.NotImplementedException();
+            Process.Start("/usr/bin/modprobe", MassStorageGadgetModuleName).WaitForExit();
         }
     }
 }
