@@ -8,6 +8,7 @@ using TeslaCam.Contracts;
 using TeslaCam.Extensions;
 using TeslaCam.HostedServices;
 using TeslaCam.Notifiers;
+using TeslaCam.Notifiers.Pushover;
 using TeslaCam.Options;
 using TeslaCam.Services;
 using TeslaCam.Uploaders.AzureBlobStorage;
@@ -40,10 +41,12 @@ namespace TeslaCam
                 })
                 .ConfigureLogging(builder =>
                 {
-                    builder.AddConsole(options =>
-                    {
-                        options.Format = ConsoleLoggerFormat.Systemd;
-                    });
+                    builder
+                        .SetMinimumLevel(LogLevel.Debug)
+                        .AddConsole(options =>
+                        {
+                            options.Format = ConsoleLoggerFormat.Systemd;
+                        });
                 })
                 .ConfigureServices(services =>
                 {
@@ -54,15 +57,16 @@ namespace TeslaCam
                         .ConfigureSection();
 
                     services.AddSingleton<ITeslaCamService, TeslaCamService>();
-                    services.AddSingleton<IUploadService, UploadService>();
                     services.AddSingleton<IFileSystemService, FileSystemService>();
                     services.AddSingleton<INetworkService, NetworkService>();
                     services.AddSingleton<IKernelService, KernelService>();
                     services.AddSingleton<ITeslaApiService, TeslaApiService>();
-
+                    
+                    services.AddSingleton<IUploadService, UploadService>();
                     services.AddAzureBlobStorageUploader();
 
-                    services.AddSingleton<INotifier, PushoverNotifier>();
+                    services.AddSingleton<INotificationService, NotificationService>();
+                    services.AddPushoverNotifier();
 
                     services.AddHostedService<ArchiveWorker>();
                     services.AddHostedService<UploadWorker>();

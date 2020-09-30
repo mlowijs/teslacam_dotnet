@@ -37,7 +37,13 @@ namespace TeslaCam.Services
             if (!_uploaders.TryGetValue(_options.Uploader, out var uploader))
                 return;
             
-            _logger.LogInformation("Uploading archived clips");
+            if (uploader.RequiresInternet && !await _networkService.IsConnectedToInternet())
+            {
+                _logger.LogDebug("No Internet connection, skipping upload");
+                return;
+            }
+            
+            _logger.LogDebug("Uploading archived clips");
             
             var clips = _fileSystemService
                 .GetArchivedClips()
@@ -45,16 +51,12 @@ namespace TeslaCam.Services
             
             if (clips.Length == 0)
             {
-                _logger.LogInformation("No archived clips to upload");
+                _logger.LogDebug("No archived clips to upload");
                 return;
             }
 
-            if (uploader.RequiresInternet && !await _networkService.IsConnectedToInternet())
-            {
-                _logger.LogInformation("No Internet connection, skipping upload");
-                return;
-            }
-
+            _logger.LogDebug($"Will upload {clips.Length} clips");
+            
             for (var i = 0; i < clips.Length; i++)
             {
                 var clip = clips[i];

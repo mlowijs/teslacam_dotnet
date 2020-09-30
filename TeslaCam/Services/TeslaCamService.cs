@@ -37,7 +37,7 @@ namespace TeslaCam.Services
                 return;
             }
             
-            _logger.LogInformation("Archiving Recent clips");
+            _logger.LogDebug("Archiving Recent clips");
 
             var clips = _fileSystemService
                 .GetClips(ClipType.Recent)
@@ -48,11 +48,11 @@ namespace TeslaCam.Services
 
             if (clips.Length == 0)
             {
-                _logger.LogInformation("No new Recent clips to archive");
+                _logger.LogDebug("No new Recent clips to archive");
                 return;
             }
 
-            _logger.LogInformation($"Will archive {clips.Length} Recent clips");
+            _logger.LogDebug($"Will archive {clips.Length} Recent clips");
 
             _fileSystemService.ArchiveClips(clips, cancellationToken);
         }
@@ -68,7 +68,7 @@ namespace TeslaCam.Services
                 return;
             }
             
-            _logger.LogInformation($"Archiving {clipType} clips");
+            _logger.LogDebug($"Archiving {clipType} clips");
 
             var clips = _fileSystemService
                 .GetClips(clipType);
@@ -93,11 +93,11 @@ namespace TeslaCam.Services
             
             if (clipsToArchive.Count == 0)
             {
-                _logger.LogInformation($"No new {clipType} clips to archive");
+                _logger.LogDebug($"No new {clipType} clips to archive");
                 return;
             }
             
-            _logger.LogInformation($"Will archive {clipsToArchive.Count} {clipType} clips");
+            _logger.LogDebug($"Will archive {clipsToArchive.Count} {clipType} clips");
             
             _fileSystemService.ArchiveClips(clipsToArchive, cancellationToken);
         }

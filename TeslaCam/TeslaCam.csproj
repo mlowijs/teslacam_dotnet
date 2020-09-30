@@ -17,6 +17,7 @@
       <ProjectReference Include="..\TeslaCam.Contracts\TeslaCam.Contracts.csproj" />
       <ProjectReference Include="..\TeslaCam.Extensions\TeslaCam.Extensions.csproj" />
       <ProjectReference Include="..\TeslaCam.Model\TeslaCam.Model.csproj" />
+      <ProjectReference Include="..\TeslaCam.Notifiers.Pushover\TeslaCam.Notifiers.Pushover.csproj" />
       <ProjectReference Include="..\TeslaCam.Uploaders.AzureBlobStorage\TeslaCam.Uploaders.AzureBlobStorage.csproj" />
     </ItemGroup>
 
