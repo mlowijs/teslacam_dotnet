@@ -12,6 +12,8 @@ namespace TeslaCam.Services
 {
     public class TeslaCamService : ITeslaCamService
     {
+        private const long MegabyteInBytes = 1 * 1024 * 1024;
+        
         private readonly IFileSystemService _fileSystemService;
         private readonly TeslaCamOptions _options;
         private readonly ILogger<TeslaCamService> _logger;
@@ -115,7 +117,7 @@ namespace TeslaCam.Services
         {
             return clip.Date != DateTimeOffset.MinValue
                    && clip.Camera != Camera.Unknown
-                   && clip.File.Length > Constants.MegabyteInBytes;
+                   && clip.File.Length > MegabyteInBytes;
         }
     }
 }
