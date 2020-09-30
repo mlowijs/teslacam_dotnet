@@ -20,12 +20,12 @@ namespace TeslaCam.Services
             _notifiers = notifiers.ToDictionary(n => n.Name);
         }
         
-        public Task NotifyAsync(string message)
+        public Task NotifyAsync(string title, string message)
         {
             if (!_notifiers.TryGetValue(_options.Notifier, out var notifier))
                 return Task.CompletedTask;
 
-            return Task.CompletedTask;
+            return notifier.NotifyAsync(title, message);
         }
     }
 }

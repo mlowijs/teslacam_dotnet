@@ -6,6 +6,6 @@ namespace TeslaCam.Contracts
     {
         string Name { get; }
 
-        Task NotifyAsync(string message);
+        Task NotifyAsync(string title, string message);
     }
 }

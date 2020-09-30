@@ -4,6 +4,6 @@ namespace TeslaCam.Contracts
 {
     public interface INotificationService
     {
-        Task NotifyAsync(string message);
+        Task NotifyAsync(string title, string message);
     }
 }
