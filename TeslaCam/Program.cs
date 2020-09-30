@@ -7,7 +7,6 @@ using Microsoft.Extensions.Logging.Console;
 using TeslaCam.Contracts;
 using TeslaCam.Extensions;
 using TeslaCam.HostedServices;
-using TeslaCam.Notifiers;
 using TeslaCam.Notifiers.Pushover;
 using TeslaCam.Options;
 using TeslaCam.Services;

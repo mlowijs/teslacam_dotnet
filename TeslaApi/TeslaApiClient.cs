@@ -16,30 +16,21 @@ namespace TeslaApi
         private const string OauthClientSecret = "c7257eb71a564034f9419ee651c7d0e5f7aa6bfbd18bafb5c5c033b093bb2fa3";
         
         private readonly HttpClient _httpClient;
-        private readonly string? _email;
-        private readonly string? _password;
+        private readonly string _email;
+        private readonly string _password;
         
         private string? _refreshToken;
         private DateTimeOffset _expiresAt;
-
-        private TeslaApiClient()
+        
+        public TeslaApiClient(string email, string password)
         {
+            _email = email;
+            _password = password;
+            
             _httpClient = new HttpClient
             {
                 BaseAddress = new Uri(TeslaApiBaseAddress),
             };
-        }
-        
-        public TeslaApiClient(string email, string password) : this()
-        {
-            _email = email;
-            _password = password;
-        }
-
-        public TeslaApiClient(string token) : this()
-        {
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-            _expiresAt = DateTimeOffset.UtcNow.AddDays(1);
         }
 
         public async Task<IEnumerable<TeslaVehicle>> ListVehiclesAsync()
@@ -72,7 +63,7 @@ namespace TeslaApi
         {
             if (_httpClient.DefaultRequestHeaders.Authorization != null && _expiresAt > DateTimeOffset.UtcNow)
                 return;
-            
+
             var tokenResponse = await RefreshAccessToken();
 
             if (tokenResponse == null)
@@ -139,7 +130,7 @@ namespace TeslaApi
 
             if (!responseMessage.IsSuccessStatusCode)
             {
-                // do something
+                // TODO
             }
 
             var apiResponse =

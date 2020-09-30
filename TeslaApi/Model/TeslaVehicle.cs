@@ -8,7 +8,7 @@ namespace TeslaApi.Model
         [JsonPropertyName("id")]
         public long Id { get; set; }
         [JsonPropertyName("vin")]
-        public string VehicleIdentificationNumber { get; set; }
+        public string VehicleIdentificationNumber { get; set; } = "";
         [JsonPropertyName("state")]
         [JsonConverter(typeof(VehicleStateConverter))]
         public bool IsOnline { get; set; }
