@@ -18,5 +18,6 @@ namespace TeslaCam.Options
         public bool ManageSentryMode { get; set; } = false;
 
         public string Uploader { get; set; } = "";
+        public string Notifier { get; set; } = "";
     }
 }
