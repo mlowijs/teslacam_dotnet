@@ -8,17 +8,18 @@ namespace TeslaCam.HostedServices
 {
     public class TestWorker : BackgroundService
     {
-        private readonly IUploadService _uploadService;
+        private readonly INotificationService _notificationService;
 
-        public TestWorker(IUploadService uploadService)
+        public TestWorker(INotificationService notificationService)
         {
-            _uploadService = uploadService;
+            _notificationService = notificationService;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             while (!stoppingToken.IsCancellationRequested)
             {
+                await _notificationService.NotifyAsync("title", "message", stoppingToken);
 
                 await Task.Delay(TimeSpan.FromSeconds(30), stoppingToken);
             }

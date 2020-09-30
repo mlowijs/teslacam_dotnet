@@ -15,16 +15,19 @@ namespace TeslaCam.Services
         private readonly IFileSystemService _fileSystemService;
         private readonly ILogger<UploadService> _logger;
         private readonly INetworkService _networkService;
+        private readonly INotificationService _notificationService;
         
         private readonly Dictionary<string, IUploader> _uploaders;
         
         public UploadService(IEnumerable<IUploader> uploaders, IFileSystemService fileSystemService,
-            IOptions<TeslaCamOptions> teslaCamOptions, ILogger<UploadService> logger, INetworkService networkService)
+            IOptions<TeslaCamOptions> teslaCamOptions, ILogger<UploadService> logger, INetworkService networkService,
+            INotificationService notificationService)
         {
             _options = teslaCamOptions.Value;
             _fileSystemService = fileSystemService;
             _logger = logger;
             _networkService = networkService;
+            _notificationService = notificationService;
 
             _uploaders = uploaders.ToDictionary(u => u.Name);
         }
@@ -66,6 +69,8 @@ namespace TeslaCam.Services
                 if (await uploader.UploadClipAsync(clip, cancellationToken))
                     _fileSystemService.TruncateClip(clip);
             }
+
+            await _notificationService.NotifyAsync("Clips uploaded", $"Uploaded {clips.Length} clips.", cancellationToken);
         }
     }
 }

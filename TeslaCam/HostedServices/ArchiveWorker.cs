@@ -25,15 +25,22 @@ namespace TeslaCam.HostedServices
         {
             while (!stoppingToken.IsCancellationRequested)
             {
-                await Task.Delay(TimeSpan.FromSeconds(ArchiveIntervalSeconds), stoppingToken);
+                try
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(ArchiveIntervalSeconds), stoppingToken);
                 
-                _logger.LogDebug("Starting archiving");
+                    _logger.LogDebug("Starting archiving");
                     
-                _teslaCamService.ArchiveRecentClips(stoppingToken);
-                _teslaCamService.ArchiveEventClips(ClipType.Saved, stoppingToken);
-                _teslaCamService.ArchiveEventClips(ClipType.Sentry, stoppingToken);
+                    _teslaCamService.ArchiveRecentClips(stoppingToken);
+                    _teslaCamService.ArchiveEventClips(ClipType.Saved, stoppingToken);
+                    _teslaCamService.ArchiveEventClips(ClipType.Sentry, stoppingToken);
                     
-                _logger.LogDebug("Finished archiving");
+                    _logger.LogDebug("Finished archiving");
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError($"Unhandled exception occurred: {e.Message}");
+                }
             }
         }
     }

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
 using TeslaCam.Contracts;
@@ -20,12 +21,12 @@ namespace TeslaCam.Services
             _notifiers = notifiers.ToDictionary(n => n.Name);
         }
         
-        public Task NotifyAsync(string title, string message)
+        public Task NotifyAsync(string title, string message, CancellationToken cancellationToken)
         {
             if (!_notifiers.TryGetValue(_options.Notifier, out var notifier))
                 return Task.CompletedTask;
 
-            return notifier.NotifyAsync(title, message);
+            return notifier.NotifyAsync(title, message, cancellationToken);
         }
     }
 }

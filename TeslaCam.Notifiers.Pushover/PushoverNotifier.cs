@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -30,7 +31,7 @@ namespace TeslaCam.Notifiers.Pushover
         
         public string Name => "pushover";
         
-        public async Task NotifyAsync(string title, string message)
+        public async Task NotifyAsync(string title, string message, CancellationToken cancellationToken)
         {
             var content = new FormUrlEncodedContent(new Dictionary<string, string>
             {
@@ -45,7 +46,7 @@ namespace TeslaCam.Notifiers.Pushover
                 Content = content
             };
 
-            var responseMessage = await _httpClient.SendAsync(requestMessage);
+            var responseMessage = await _httpClient.SendAsync(requestMessage, cancellationToken);
             var responseString = await responseMessage.Content.ReadAsStringAsync();
             
             if (!responseMessage.IsSuccessStatusCode)

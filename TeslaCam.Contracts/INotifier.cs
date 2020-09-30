@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Threading;
+using System.Threading.Tasks;
 
 namespace TeslaCam.Contracts
 {
@@ -6,6 +7,6 @@ namespace TeslaCam.Contracts
     {
         string Name { get; }
 
-        Task NotifyAsync(string title, string message);
+        Task NotifyAsync(string title, string message, CancellationToken cancellationToken);
     }
 }

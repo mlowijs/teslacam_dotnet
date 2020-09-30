@@ -24,13 +24,20 @@ namespace TeslaCam.HostedServices
         {
             while (!stoppingToken.IsCancellationRequested)
             {
-                await Task.Delay(TimeSpan.FromSeconds(UploadIntervalSeconds), stoppingToken);
+                try
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(UploadIntervalSeconds), stoppingToken);
                 
-                _logger.LogDebug("Starting uploading");
+                    _logger.LogDebug("Starting uploading");
                 
-                await _uploadService.UploadClipsAsync(stoppingToken);
+                    await _uploadService.UploadClipsAsync(stoppingToken);
                 
-                _logger.LogDebug("Finished uploading");
+                    _logger.LogDebug("Finished uploading");
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError($"Unhandled exception occurred: {e.Message}");
+                }
             }
         }
     }
