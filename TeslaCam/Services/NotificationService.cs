@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using TeslaCam.Contracts;
 using TeslaCam.Options;
@@ -11,11 +12,13 @@ namespace TeslaCam.Services
     public class NotificationService : INotificationService
     {
         private readonly TeslaCamOptions _options;
+        private readonly ILogger<NotificationService> _logger;
         
         private readonly IDictionary<string, INotifier> _notifiers;
         
-        public NotificationService(IEnumerable<INotifier> notifiers, IOptions<TeslaCamOptions> teslaCamOptions)
+        public NotificationService(IEnumerable<INotifier> notifiers, IOptions<TeslaCamOptions> teslaCamOptions, ILogger<NotificationService> logger)
         {
+            _logger = logger;
             _options = teslaCamOptions.Value;
 
             _notifiers = notifiers.ToDictionary(n => n.Name);
@@ -26,6 +29,8 @@ namespace TeslaCam.Services
             if (!_notifiers.TryGetValue(_options.Notifier, out var notifier))
                 return Task.CompletedTask;
 
+            _logger.LogDebug("Sending notification");
+            
             return notifier.NotifyAsync(title, message, cancellationToken);
         }
     }

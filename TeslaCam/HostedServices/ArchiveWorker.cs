@@ -28,18 +28,26 @@ namespace TeslaCam.HostedServices
                 try
                 {
                     await Task.Delay(TimeSpan.FromSeconds(ArchiveIntervalSeconds), stoppingToken);
-                
+
                     _logger.LogDebug("Starting archiving");
-                    
+
                     _teslaCamService.ArchiveRecentClips(stoppingToken);
                     _teslaCamService.ArchiveEventClips(ClipType.Saved, stoppingToken);
                     _teslaCamService.ArchiveEventClips(ClipType.Sentry, stoppingToken);
-                    
+
                     _logger.LogDebug("Finished archiving");
                 }
-                catch (Exception e)
+                catch (TaskCanceledException)
                 {
-                    _logger.LogError($"Unhandled exception occurred: {e.Message}");
+                    break;
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
+                catch (Exception exception)
+                {
+                    _logger.LogError(exception, $"Unhandled exception occurred: {exception.Message}");
                 }
             }
         }
