@@ -13,14 +13,14 @@ namespace TeslaCam.HostedServices
         private readonly ILogger<CleanWorker> _logger;
         private readonly TeslaCamOptions _options;
         
-        private DateTimeOffset _lastCleanDate;
+        private DateTimeOffset _nextCleanTime;
 
         public CleanWorker(ILogger<CleanWorker> logger, IOptions<TeslaCamOptions> teslaCamOptions)
         {
             _logger = logger;
             _options = teslaCamOptions.Value;
             
-            _lastCleanDate = DateTimeOffset.UtcNow.Date;
+            _nextCleanTime = DateTimeOffset.UtcNow + _options.CleanInterval;
         }
         
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -29,12 +29,7 @@ namespace TeslaCam.HostedServices
             {
                 await Task.Delay(TimeSpan.FromSeconds(10), stoppingToken);
                 
-                var now = DateTimeOffset.UtcNow;
-
-                if (now.Date <= _lastCleanDate)
-                    continue;
-
-                if (DateTimeOffset.UtcNow.TimeOfDay <= _options.CleanTime)
+                if (DateTimeOffset.UtcNow < _nextCleanTime)
                     continue;
 
                 // remove module
@@ -43,7 +38,7 @@ namespace TeslaCam.HostedServices
                 // unmount FS
                 // probe module
 
-                _lastCleanDate = now.Date;
+                _nextCleanTime = DateTimeOffset.UtcNow + _options.CleanInterval;
             }
         }
     }
