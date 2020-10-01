@@ -29,7 +29,7 @@ namespace TeslaCam.Notifiers.Pushover
             };
         }
         
-        public string Name => "pushover";
+        public string Name => "Pushover";
         
         public async Task NotifyAsync(string title, string message, CancellationToken cancellationToken)
         {

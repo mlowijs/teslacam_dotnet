@@ -13,7 +13,7 @@ namespace TeslaCam.Options
         public Camera[] CamerasToProcess { get; set; } = {Camera.Back, Camera.Front, Camera.LeftRepeater, Camera.RightRepeater};
         public int KeepClipsPerEventAmount { get; set; } = 10;
 
-        public TimeSpan CleanTime { get; set; } = TimeSpan.FromHours(2);
+        public TimeSpan CleanInterval { get; set; } = TimeSpan.FromHours(1);
 
         public bool ManageSentryMode { get; set; } = false;
 
