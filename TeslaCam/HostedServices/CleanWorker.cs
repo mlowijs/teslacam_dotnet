@@ -4,20 +4,23 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using TeslaCam.Contracts;
 using TeslaCam.Options;
 
 namespace TeslaCam.HostedServices
 {
     public class CleanWorker : BackgroundService
     {
+        private readonly ITeslaCamService _teslaCamService;
         private readonly ILogger<CleanWorker> _logger;
         private readonly TeslaCamOptions _options;
         
         private DateTimeOffset _nextCleanTime;
 
-        public CleanWorker(ILogger<CleanWorker> logger, IOptions<TeslaCamOptions> teslaCamOptions)
+        public CleanWorker(ILogger<CleanWorker> logger, IOptions<TeslaCamOptions> teslaCamOptions, ITeslaCamService teslaCamService)
         {
             _logger = logger;
+            _teslaCamService = teslaCamService;
             _options = teslaCamOptions.Value;
             
             _nextCleanTime = DateTimeOffset.UtcNow + _options.CleanInterval;
@@ -32,11 +35,7 @@ namespace TeslaCam.HostedServices
                 if (DateTimeOffset.UtcNow < _nextCleanTime)
                     continue;
 
-                // remove module
-                // mount FS
-                // delete archived clips
-                // unmount FS
-                // probe module
+                _teslaCamService.CleanUsbDrive(stoppingToken);
 
                 _nextCleanTime = DateTimeOffset.UtcNow + _options.CleanInterval;
             }

@@ -104,11 +104,13 @@ namespace TeslaCam.Services
             _fileSystemService.ArchiveClips(clipsToArchive, cancellationToken);
         }
 
-        public void Clean(CancellationToken cancellationToken)
+        public void CleanUsbDrive(CancellationToken cancellationToken)
         {
             _kernelService.RemoveMassStorageGadgetModule();
             
-            // do file cleanup
+            // mount FS
+            // delete from USB the archived clips
+            // unmount FS
             
             _kernelService.LoadMassStorageGadgetModule();
         }
