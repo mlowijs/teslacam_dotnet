@@ -18,14 +18,17 @@ namespace TeslaCam.Services
         private readonly TeslaCamOptions _options;
         private readonly ILogger<TeslaCamService> _logger;
         private readonly IKernelService _kernelService;
+        private readonly IUsbService _usbService;
 
-        public TeslaCamService(IOptions<TeslaCamOptions> teslaCamOptions, IFileSystemService fileSystemService, ILogger<TeslaCamService> logger, IKernelService kernelService)
+        public TeslaCamService(IOptions<TeslaCamOptions> teslaCamOptions, IFileSystemService fileSystemService,
+            ILogger<TeslaCamService> logger, IKernelService kernelService, IUsbService usbService)
         {
             _options = teslaCamOptions.Value;
-            
+
             _fileSystemService = fileSystemService;
             _logger = logger;
             _kernelService = kernelService;
+            _usbService = usbService;
         }
 
         public void ArchiveRecentClips(CancellationToken cancellationToken)
@@ -108,10 +111,11 @@ namespace TeslaCam.Services
         {
             _kernelService.RemoveMassStorageGadgetModule();
             
-            // mount FS
-            // delete from USB the archived clips
-            // unmount FS
-            
+            _usbService.ExecuteWithMountedFileSystem(() =>
+            {
+                // delete from USB the archived clips
+            }, true);
+
             _kernelService.LoadMassStorageGadgetModule();
         }
 

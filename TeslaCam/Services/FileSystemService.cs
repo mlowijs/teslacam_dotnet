@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -27,46 +26,47 @@ namespace TeslaCam.Services
 
         private static readonly Regex TeslaCamDateTimeCameraRegex =
             new Regex(@"^(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2})-(\w+)\.mp4$", RegexOptions.Compiled);
-        
+
+        private readonly IUsbService _usbService;
         private readonly ILogger<FileSystemService> _logger;
         private readonly TeslaCamOptions _options;
 
-        public FileSystemService(IOptions<TeslaCamOptions> teslaCamOptions, ILogger<FileSystemService> logger)
+        public FileSystemService(IOptions<TeslaCamOptions> teslaCamOptions, ILogger<FileSystemService> logger,
+            IUsbService usbService)
         {
             _logger = logger;
+            _usbService = usbService;
             _options = teslaCamOptions.Value;
         }
 
         public IEnumerable<Clip> GetClips(ClipType clipType)
         {
-            if (_options.MountingRequired)
-                MountFileSystem();
+            var clips = Enumerable.Empty<Clip>();
             
-            var clipDirectory = new DirectoryInfo(GetDirectoryForClipType(clipType));
-            
-            IEnumerable<Clip> clips;
+            _usbService.ExecuteWithMountedFileSystem(() =>
+            {
+                var clipDirectory = new DirectoryInfo(GetDirectoryForClipType(clipType));
 
-            if (!clipDirectory.Exists)
-            {
-                _logger.LogDebug($"Clip directory '{clipDirectory}' not found");
-                clips = Enumerable.Empty<Clip>();
-            }
-            else if (clipType == ClipType.Recent)
-            {
-                clips = clipDirectory.EnumerateFiles()
-                    .Select(fileInfo => CreateClip(fileInfo, clipType))
-                    .ToArray();
-            }
-            else
-            {
-                clips = clipDirectory.EnumerateDirectories()
-                    .SelectMany(dirInfo => dirInfo.EnumerateFiles()
-                        .Select(fileInfo => CreateClip(fileInfo, clipType, dirInfo.Name)))
-                    .ToArray();
-            }
+                if (!clipDirectory.Exists)
+                {
+                    _logger.LogDebug($"Clip directory '{clipDirectory}' not found");
+                    return;
+                }
 
-            if (_options.MountingRequired)
-                UnmountFileSystem();
+                if (clipType == ClipType.Recent)
+                {
+                    clips = clipDirectory.EnumerateFiles()
+                        .Select(fileInfo => CreateClip(fileInfo, clipType))
+                        .ToArray();
+                }
+                else
+                {
+                    clips = clipDirectory.EnumerateDirectories()
+                        .SelectMany(dirInfo => dirInfo.EnumerateFiles()
+                            .Select(fileInfo => CreateClip(fileInfo, clipType, dirInfo.Name)))
+                        .ToArray();
+                }
+            });
 
             return clips;
         }
@@ -78,23 +78,20 @@ namespace TeslaCam.Services
             
             var clipsArray = clips.ToArray();
 
-            if (_options.MountingRequired)
-                MountFileSystem();
-            
-            for (var i = 0; i < clipsArray.Length; i++)
+            _usbService.ExecuteWithMountedFileSystem(() =>
             {
-                if (cancellationToken.IsCancellationRequested)
-                    break;
-                
-                var clip = clipsArray[i];
+                for (var i = 0; i < clipsArray.Length; i++)
+                {
+                    if (cancellationToken.IsCancellationRequested)
+                        break;
 
-                _logger.LogInformation($"Archiving clip '{clip.File.Name}' ({i + 1}/{clipsArray.Length})");
+                    var clip = clipsArray[i];
 
-                clip.File.CopyTo(GetClipArchivePath(clip), true);
-            }
-            
-            if (_options.MountingRequired)
-                UnmountFileSystem();
+                    _logger.LogInformation($"Archiving clip '{clip.File.Name}' ({i + 1}/{clipsArray.Length})");
+
+                    clip.File.CopyTo(GetClipArchivePath(clip), true);
+                }
+            });
         }
         
         public void DeleteClip(Clip clip)
@@ -124,27 +121,6 @@ namespace TeslaCam.Services
                 .EnumerateFiles()
                 .Where(fi => fi.Length != 0)
                 .Select(CreateArchiveClip);
-        }
-
-        private void MountFileSystem(bool readWrite = false)
-        {
-            _logger.LogDebug($"Mounting '{_options.MountPoint}'");
-
-            var startInfo = new ProcessStartInfo("/usr/bin/mount");
-            
-            if (readWrite)
-                startInfo.ArgumentList.Add("-orw");
-            
-            startInfo.ArgumentList.Add(_options.MountPoint);
-
-            Process.Start(startInfo).WaitForExit();
-        }
-
-        private void UnmountFileSystem()
-        {
-            _logger.LogDebug($"Unmounting '{_options.MountPoint}'");
-
-            Process.Start("/usr/bin/umount", _options.MountPoint).WaitForExit();
         }
 
         private string GetDirectoryForClipType(ClipType clipType)
