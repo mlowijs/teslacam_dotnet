@@ -22,7 +22,7 @@ namespace TeslaCam.HostedServices
             _logger = logger;
             _teslaCamService = teslaCamService;
             _options = teslaCamOptions.Value;
-            
+
             _nextCleanTime = DateTimeOffset.UtcNow + _options.CleanInterval;
         }
         
@@ -30,14 +30,29 @@ namespace TeslaCam.HostedServices
         {
             while (!stoppingToken.IsCancellationRequested)
             {
-                await Task.Delay(TimeSpan.FromSeconds(10), stoppingToken);
-                
-                if (DateTimeOffset.UtcNow < _nextCleanTime)
-                    continue;
+                try
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(10), stoppingToken);
 
-                _teslaCamService.CleanUsbDrive(stoppingToken);
+                    if (DateTimeOffset.UtcNow < _nextCleanTime)
+                        continue;
 
-                _nextCleanTime = DateTimeOffset.UtcNow + _options.CleanInterval;
+                    _teslaCamService.CleanUsbDrive(stoppingToken);
+
+                    _nextCleanTime = DateTimeOffset.UtcNow + _options.CleanInterval;
+                }
+                catch (TaskCanceledException)
+                {
+                    break;
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
+                catch (Exception exception)
+                {
+                    _logger.LogError(exception, $"Unhandled exception occurred: {exception.Message}");
+                }
             }
         }
     }

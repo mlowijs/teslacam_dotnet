@@ -123,7 +123,7 @@ namespace TeslaCam.Services
                 var archivedClips = _fileSystemService.GetClips(ClipType.Saved)
                     .Concat(_fileSystemService.GetClips(ClipType.Sentry))
                     .Where(c => _fileSystemService.IsArchived(c));
-                
+
                 _fileSystemService.DeleteClips(archivedClips, cancellationToken);
             }
 
