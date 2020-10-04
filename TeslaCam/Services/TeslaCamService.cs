@@ -44,6 +44,9 @@ namespace TeslaCam.Services
             
             _logger.LogDebug("Archiving Recent clips");
 
+            using var usbContext = _usbService.AcquireUsbContext();
+            usbContext.Mount(false);
+            
             var clips = _fileSystemService
                 .GetClips(ClipType.Recent)
                 .Where(IsClipValid)
@@ -75,6 +78,9 @@ namespace TeslaCam.Services
             
             _logger.LogDebug($"Archiving {clipType} clips");
 
+            using var usbContext = _usbService.AcquireUsbContext();
+            usbContext.Mount(false);
+            
             var clips = _fileSystemService
                 .GetClips(clipType);
 
@@ -113,8 +119,12 @@ namespace TeslaCam.Services
             {
                 _kernelService.RemoveMassStorageGadgetModule();
                 context.Mount(true);
+
+                var archivedClips = _fileSystemService.GetClips(ClipType.Saved)
+                    .Concat(_fileSystemService.GetClips(ClipType.Sentry))
+                    .Where(c => _fileSystemService.IsArchived(c));
                 
-                // clean stuff up
+                _fileSystemService.DeleteClips(archivedClips, cancellationToken);
             }
 
             _kernelService.LoadMassStorageGadgetModule();

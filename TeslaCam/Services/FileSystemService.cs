@@ -27,23 +27,17 @@ namespace TeslaCam.Services
         private static readonly Regex TeslaCamDateTimeCameraRegex =
             new Regex(@"^(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2})-(\w+)\.mp4$", RegexOptions.Compiled);
 
-        private readonly IUsbService _usbService;
         private readonly ILogger<FileSystemService> _logger;
         private readonly TeslaCamOptions _options;
 
-        public FileSystemService(IOptions<TeslaCamOptions> teslaCamOptions, ILogger<FileSystemService> logger,
-            IUsbService usbService)
+        public FileSystemService(IOptions<TeslaCamOptions> teslaCamOptions, ILogger<FileSystemService> logger)
         {
             _logger = logger;
-            _usbService = usbService;
             _options = teslaCamOptions.Value;
         }
 
         public IEnumerable<Clip> GetClips(ClipType clipType)
         {
-            using var context = _usbService.AcquireUsbContext();
-            context.Mount(false);
-                
             var clipDirectory = new DirectoryInfo(GetDirectoryForClipType(clipType));
 
             if (!clipDirectory.Exists)
@@ -72,9 +66,6 @@ namespace TeslaCam.Services
             
             var clipsArray = clips.ToArray();
 
-            using var context = _usbService.AcquireUsbContext();
-            context.Mount(false);
-            
             for (var i = 0; i < clipsArray.Length; i++)
             {
                 if (cancellationToken.IsCancellationRequested)
@@ -88,10 +79,21 @@ namespace TeslaCam.Services
             }
         }
         
-        public void DeleteClip(Clip clip)
+        public void DeleteClips(IEnumerable<Clip> clips, CancellationToken cancellationToken)
         {
-            _logger.LogInformation($"Deleting clip '{clip.File.Name}'");
-            clip.File.Delete();
+            var clipsArray = clips.ToArray();
+
+            for (var i = 0; i < clipsArray.Length; i++)
+            {
+                if (cancellationToken.IsCancellationRequested)
+                    break;
+                
+                var clip = clipsArray[i];
+
+                _logger.LogDebug($"Deleting clip '{clip.File.Name}' ({i + 1}/{clipsArray.Length})");
+                
+                clip.File.Delete();
+            }
         }
         
         public void TruncateClip(Clip clip)

@@ -16,6 +16,8 @@ namespace TeslaCam.Services
             private readonly TeslaCamOptions _options;
             private readonly ILogger<UsbContext> _logger;
 
+            private bool _isDisposed = false;
+
             public UsbContext(UsbService usbService, TeslaCamOptions options, ILoggerFactory loggerFactory)
             {
                 _usbService = usbService;
@@ -25,6 +27,11 @@ namespace TeslaCam.Services
 
             public void Dispose()
             {
+                if (_isDisposed)
+                    throw new ObjectDisposedException(GetType().FullName);
+                
+                _isDisposed = true;
+                
                 _logger.LogDebug($"Unmounting '{_options.MountPoint}'");
 
                 Process.Start("/usr/bin/umount", _options.MountPoint).WaitForExit();
@@ -34,6 +41,9 @@ namespace TeslaCam.Services
 
             public void Mount(bool readWrite)
             {
+                if (_isDisposed)
+                    throw new ObjectDisposedException(GetType().FullName);
+                
                 _logger.LogDebug($"Mounting '{_options.MountPoint}'");
 
                 var startInfo = new ProcessStartInfo("/usr/bin/mount");
