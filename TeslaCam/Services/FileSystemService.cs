@@ -41,34 +41,28 @@ namespace TeslaCam.Services
 
         public IEnumerable<Clip> GetClips(ClipType clipType)
         {
-            var clips = Enumerable.Empty<Clip>();
-            
-            _usbService.ExecuteWithMountedFileSystem(() =>
+            using var context = _usbService.AcquireUsbContext();
+            context.Mount(false);
+                
+            var clipDirectory = new DirectoryInfo(GetDirectoryForClipType(clipType));
+
+            if (!clipDirectory.Exists)
             {
-                var clipDirectory = new DirectoryInfo(GetDirectoryForClipType(clipType));
+                _logger.LogDebug($"Clip directory '{clipDirectory}' not found");
+                return Enumerable.Empty<Clip>();
+            }
 
-                if (!clipDirectory.Exists)
-                {
-                    _logger.LogDebug($"Clip directory '{clipDirectory}' not found");
-                    return;
-                }
+            if (clipType == ClipType.Recent)
+            {
+                return clipDirectory.EnumerateFiles()
+                    .Select(fileInfo => CreateClip(fileInfo, clipType))
+                    .ToArray();
+            }
 
-                if (clipType == ClipType.Recent)
-                {
-                    clips = clipDirectory.EnumerateFiles()
-                        .Select(fileInfo => CreateClip(fileInfo, clipType))
-                        .ToArray();
-                }
-                else
-                {
-                    clips = clipDirectory.EnumerateDirectories()
-                        .SelectMany(dirInfo => dirInfo.EnumerateFiles()
-                            .Select(fileInfo => CreateClip(fileInfo, clipType, dirInfo.Name)))
-                        .ToArray();
-                }
-            });
-
-            return clips;
+            return clipDirectory.EnumerateDirectories()
+                .SelectMany(dirInfo => dirInfo.EnumerateFiles()
+                    .Select(fileInfo => CreateClip(fileInfo, clipType, dirInfo.Name)))
+                .ToArray();
         }
 
         public void ArchiveClips(IEnumerable<Clip> clips, CancellationToken cancellationToken)
@@ -78,20 +72,20 @@ namespace TeslaCam.Services
             
             var clipsArray = clips.ToArray();
 
-            _usbService.ExecuteWithMountedFileSystem(() =>
+            using var context = _usbService.AcquireUsbContext();
+            context.Mount(false);
+            
+            for (var i = 0; i < clipsArray.Length; i++)
             {
-                for (var i = 0; i < clipsArray.Length; i++)
-                {
-                    if (cancellationToken.IsCancellationRequested)
-                        break;
+                if (cancellationToken.IsCancellationRequested)
+                    break;
 
-                    var clip = clipsArray[i];
+                var clip = clipsArray[i];
 
-                    _logger.LogInformation($"Archiving clip '{clip.File.Name}' ({i + 1}/{clipsArray.Length})");
+                _logger.LogInformation($"Archiving clip '{clip.File.Name}' ({i + 1}/{clipsArray.Length})");
 
-                    clip.File.CopyTo(GetClipArchivePath(clip), true);
-                }
-            });
+                clip.File.CopyTo(GetClipArchivePath(clip), true);
+            }
         }
         
         public void DeleteClip(Clip clip)

@@ -109,12 +109,13 @@ namespace TeslaCam.Services
 
         public void CleanUsbDrive(CancellationToken cancellationToken)
         {
-            _kernelService.RemoveMassStorageGadgetModule();
-            
-            _usbService.ExecuteWithMountedFileSystem(() =>
+            using (var context = _usbService.AcquireUsbContext())
             {
-                // delete from USB the archived clips
-            }, true);
+                _kernelService.RemoveMassStorageGadgetModule();
+                context.Mount(true);
+                
+                // clean stuff up
+            }
 
             _kernelService.LoadMassStorageGadgetModule();
         }

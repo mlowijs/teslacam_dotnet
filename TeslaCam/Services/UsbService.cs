@@ -8,63 +8,73 @@ using TeslaCam.Options;
 
 namespace TeslaCam.Services
 {
-    public class UsbService : IUsbService
+    public class UsbService : IUsbService, IDisposable
     {
+        private class UsbContext : IUsbContext
+        {
+            private readonly UsbService _usbService;
+            private readonly TeslaCamOptions _options;
+            private readonly ILogger<UsbContext> _logger;
+
+            public UsbContext(UsbService usbService, TeslaCamOptions options, ILoggerFactory loggerFactory)
+            {
+                _usbService = usbService;
+                _options = options;
+                _logger = loggerFactory.CreateLogger<UsbContext>();
+            }
+
+            public void Dispose()
+            {
+                _logger.LogDebug($"Unmounting '{_options.MountPoint}'");
+
+                Process.Start("/usr/bin/umount", _options.MountPoint).WaitForExit();
+                
+                _usbService.ReleaseUsbContext();
+            }
+
+            public void Mount(bool readWrite)
+            {
+                _logger.LogDebug($"Mounting '{_options.MountPoint}'");
+
+                var startInfo = new ProcessStartInfo("/usr/bin/mount");
+            
+                if (readWrite)
+                    startInfo.ArgumentList.Add("-orw");
+            
+                startInfo.ArgumentList.Add(_options.MountPoint);
+
+                Process.Start(startInfo).WaitForExit();
+            }
+        }
+
         private readonly TeslaCamOptions _options;
-        private readonly ILogger<UsbService> _logger;
+        private readonly ILoggerFactory _loggerFactory;
 
         private readonly Mutex _mutex;
 
-        public UsbService(IOptions<TeslaCamOptions> teslaCamOptions, ILogger<UsbService> logger)
+        public UsbService(IOptions<TeslaCamOptions> teslaCamOptions, ILoggerFactory loggerFactory)
         {
-            _logger = logger;
+            _loggerFactory = loggerFactory;
             _options = teslaCamOptions.Value;
             
             _mutex = new Mutex();
         }
-        
-        public void ExecuteWithMountedFileSystem(Action codeToExecute, bool readWrite = false)
+
+        public void Dispose()
         {
-            if (!_options.MountingRequired)
-            {
-                codeToExecute();
-                return;
-            }
-            
+            _mutex.Dispose();
+        }
+
+        public IUsbContext AcquireUsbContext()
+        {
             _mutex.WaitOne();
-
-            try
-            {
-                Mount(readWrite);
-
-                codeToExecute();
-            }
-            finally
-            {
-                Unmount();
-                _mutex.ReleaseMutex();    
-            }
+            
+            return new UsbContext(this, _options, _loggerFactory);
         }
 
-        private void Mount(bool readWrite)
+        private void ReleaseUsbContext()
         {
-            _logger.LogDebug($"Mounting '{_options.MountPoint}'");
-
-            var startInfo = new ProcessStartInfo("/usr/bin/mount");
-            
-            if (readWrite)
-                startInfo.ArgumentList.Add("-orw");
-            
-            startInfo.ArgumentList.Add(_options.MountPoint);
-
-            Process.Start(startInfo).WaitForExit();
-        }
-
-        private void Unmount()
-        {
-            _logger.LogDebug($"Unmounting '{_options.MountPoint}'");
-
-            Process.Start("/usr/bin/umount", _options.MountPoint).WaitForExit();
+            _mutex.ReleaseMutex();
         }
     }
 }
