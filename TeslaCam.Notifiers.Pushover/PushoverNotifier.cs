@@ -51,11 +51,11 @@ namespace TeslaCam.Notifiers.Pushover
             {
                 var responseMessage = await _httpClient.SendAsync(requestMessage, cancellationToken);
                 var responseString = await responseMessage.Content.ReadAsStringAsync();
-            
+
                 if (!responseMessage.IsSuccessStatusCode)
                     _logger.LogError($"Error sending notification: {responseString}");
             }
-            catch (HttpRequestException httpRequestException)
+            catch (TaskCanceledException httpRequestException)
             {
                 _logger.LogError(httpRequestException, "HTTP request failed");
             }

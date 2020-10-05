@@ -125,6 +125,11 @@ namespace TeslaCam.Services
                     .Where(c => _fileSystemService.IsArchived(c));
 
                 _fileSystemService.DeleteClips(archivedClips, cancellationToken);
+                
+                var uploadedClips = _fileSystemService.GetArchivedClips()
+                    .Where(c => c.File.Length == 0);
+                
+                _fileSystemService.DeleteClips(uploadedClips, cancellationToken);
             }
 
             _kernelService.LoadMassStorageGadgetModule();
