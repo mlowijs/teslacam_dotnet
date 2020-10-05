@@ -20,6 +20,7 @@ namespace TeslaCam.Services
         private const string SavedClipsDirectory = "SavedClips";
         private const string SentryClipsDirectory = "SentryClips";
         private const string TeslaCamDateTimeFormat = "yyyy-MM-dd_HH-mm-ss";
+        private const string FileSearchPattern = "*.mp4";
         
         private const string ArchiveDirectory = "archive";
         private const string ArchiveDateFormat = "yyyyMMddHHmmss";
@@ -48,13 +49,13 @@ namespace TeslaCam.Services
 
             if (clipType == ClipType.Recent)
             {
-                return clipDirectory.EnumerateFiles()
+                return clipDirectory.EnumerateFiles(FileSearchPattern)
                     .Select(fileInfo => CreateClip(fileInfo, clipType))
                     .ToArray();
             }
 
             return clipDirectory.EnumerateDirectories()
-                .SelectMany(dirInfo => dirInfo.EnumerateFiles()
+                .SelectMany(dirInfo => dirInfo.EnumerateFiles(FileSearchPattern)
                     .Select(fileInfo => CreateClip(fileInfo, clipType, dirInfo.Name)))
                 .ToArray();
         }
@@ -78,7 +79,24 @@ namespace TeslaCam.Services
                 clip.File.CopyTo(GetClipArchivePath(clip), true);
             }
         }
-        
+
+        public void TouchClips(IEnumerable<Clip> clips, CancellationToken cancellationToken)
+        {
+            var clipsArray = clips.ToArray();
+
+            for (var i = 0; i < clipsArray.Length; i++)
+            {
+                if (cancellationToken.IsCancellationRequested)
+                    break;
+
+                var clip = clipsArray[i];
+
+                _logger.LogDebug($"Touching clip '{clip.File.Name}' ({i + 1}/{clipsArray.Length})");
+
+                File.Create(GetClipArchivePath(clip)).Close();
+            }
+        }
+
         public void DeleteClips(IEnumerable<Clip> clips, CancellationToken cancellationToken)
         {
             var clipsArray = clips.ToArray();
@@ -116,6 +134,16 @@ namespace TeslaCam.Services
             return archiveDirectory
                 .EnumerateFiles()
                 .Where(fi => fi.Length != 0)
+                .Select(CreateArchiveClip);
+        }
+        
+        public IEnumerable<Clip> GetUploadedClips()
+        {
+            var archiveDirectory = new DirectoryInfo(Path.Join(_options.DataDirectory, ArchiveDirectory));
+
+            return archiveDirectory
+                .EnumerateFiles()
+                .Where(fi => fi.Length == 0)
                 .Select(CreateArchiveClip);
         }
 

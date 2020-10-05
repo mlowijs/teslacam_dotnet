@@ -80,9 +80,10 @@ namespace TeslaCam.Services
 
             using var usbContext = _usbService.AcquireUsbContext();
             usbContext.Mount(false);
-            
+
             var clips = _fileSystemService
-                .GetClips(clipType);
+                .GetClips(clipType)
+                .ToArray();
 
             var clipsToArchive = new List<Clip>();
             
@@ -111,6 +112,7 @@ namespace TeslaCam.Services
             _logger.LogDebug($"Will archive {clipsToArchive.Count} {clipType} clips");
             
             _fileSystemService.ArchiveClips(clipsToArchive, cancellationToken);
+            _fileSystemService.TouchClips(clips.Except(clipsToArchive), cancellationToken);
         }
 
         public void CleanUsbDrive(CancellationToken cancellationToken)
@@ -125,10 +127,8 @@ namespace TeslaCam.Services
                     .Where(c => _fileSystemService.IsArchived(c));
 
                 _fileSystemService.DeleteClips(archivedClips, cancellationToken);
-                
-                var uploadedClips = _fileSystemService.GetArchivedClips()
-                    .Where(c => c.File.Length == 0);
-                
+
+                var uploadedClips = _fileSystemService.GetUploadedClips();
                 _fileSystemService.DeleteClips(uploadedClips, cancellationToken);
             }
 
