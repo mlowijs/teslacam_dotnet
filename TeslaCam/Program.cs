@@ -1,4 +1,6 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -20,17 +22,19 @@ namespace TeslaCam
         
         private static async Task Main(string[] args)
         {
-            var configurationFilePath = args.Length > 0
-                ? args[0]
-                : ConfigurationFilePath;
-
-            var hostBuilder = GetHostBuilder(configurationFilePath)
+            if (Environment.UserName != "root")
+            {
+                Console.WriteLine("Must be run as root.");
+                return;
+            }
+            
+            var hostBuilder = GetHostBuilder(ConfigurationFilePath, args.Contains("-q"))
                 .Build();
 
             await hostBuilder.RunAsync();
         }
 
-        private static IHostBuilder GetHostBuilder(string configurationFilePath)
+        private static IHostBuilder GetHostBuilder(string configurationFilePath, bool quiet)
         {
             return new HostBuilder()
                 .ConfigureAppConfiguration(builder =>
@@ -41,7 +45,7 @@ namespace TeslaCam
                 .ConfigureLogging(builder =>
                 {
                     builder
-                        .SetMinimumLevel(LogLevel.Debug)
+                        .SetMinimumLevel(quiet ? LogLevel.Information : LogLevel.Debug)
                         .AddConsole(options =>
                         {
                             options.Format = ConsoleLoggerFormat.Systemd;

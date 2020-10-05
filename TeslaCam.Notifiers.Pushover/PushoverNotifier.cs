@@ -25,7 +25,8 @@ namespace TeslaCam.Notifiers.Pushover
             
             _httpClient = new HttpClient
             {
-                BaseAddress = new Uri(PushoverBaseUrl)
+                BaseAddress = new Uri(PushoverBaseUrl),
+                Timeout = TimeSpan.FromSeconds(10)
             };
         }
         
@@ -46,11 +47,18 @@ namespace TeslaCam.Notifiers.Pushover
                 Content = content
             };
 
-            var responseMessage = await _httpClient.SendAsync(requestMessage, cancellationToken);
-            var responseString = await responseMessage.Content.ReadAsStringAsync();
+            try
+            {
+                var responseMessage = await _httpClient.SendAsync(requestMessage, cancellationToken);
+                var responseString = await responseMessage.Content.ReadAsStringAsync();
             
-            if (!responseMessage.IsSuccessStatusCode)
-                _logger.LogError($"Error sending notification: {responseString}");
+                if (!responseMessage.IsSuccessStatusCode)
+                    _logger.LogError($"Error sending notification: {responseString}");
+            }
+            catch (HttpRequestException httpRequestException)
+            {
+                _logger.LogError(httpRequestException, "HTTP request failed");
+            }
         }
     }
 }

@@ -98,7 +98,7 @@ namespace TeslaCam.Services
         
         public void TruncateClip(Clip clip)
         {
-            _logger.LogInformation($"Truncating clip '{clip.File.Name}'");
+            _logger.LogDebug($"Truncating clip '{clip.File.Name}'");
             clip.File.Open(FileMode.Truncate).Close();
         }
 

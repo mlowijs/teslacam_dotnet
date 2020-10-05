@@ -23,7 +23,7 @@ namespace TeslaCam.HostedServices
             _teslaCamService = teslaCamService;
             _options = teslaCamOptions.Value;
 
-            _nextCleanTime = DateTimeOffset.UtcNow + _options.CleanInterval;
+            _nextCleanTime = DateTimeOffset.UtcNow;
         }
         
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -32,7 +32,7 @@ namespace TeslaCam.HostedServices
             {
                 try
                 {
-                    await Task.Delay(TimeSpan.FromSeconds(10), stoppingToken);
+                    await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
 
                     if (DateTimeOffset.UtcNow < _nextCleanTime)
                         continue;

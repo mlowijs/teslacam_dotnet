@@ -69,7 +69,7 @@ namespace TeslaCam.Services
                 if (await uploader.UploadClipAsync(clip, cancellationToken))
                     _fileSystemService.TruncateClip(clip);
             }
-
+            
             await _notificationService.NotifyAsync("Clips uploaded", $"Uploaded {clips.Length} clips.", cancellationToken);
         }
     }
