@@ -23,13 +23,14 @@ namespace TeslaCam.Services
         private readonly INetworkService _networkService;
         private readonly INotificationService _notificationService;
         private readonly IFileSystemService _fileSystemService;
+        private readonly ITeslaApiService _teslaApiService;
         
         private readonly Dictionary<string, IUploader> _uploaders;
 
         public TeslaCamService(IOptions<TeslaCamOptions> teslaCamOptions, IArchiveService archiveService,
             ILogger<TeslaCamService> logger, IKernelService kernelService, IUsbFileSystemService usbFileSystemService,
             IEnumerable<IUploader> uploaders, INetworkService networkService, INotificationService notificationService,
-            IFileSystemService fileSystemService)
+            IFileSystemService fileSystemService, ITeslaApiService teslaApiService)
         {
             _options = teslaCamOptions.Value;
 
@@ -40,6 +41,7 @@ namespace TeslaCam.Services
             _networkService = networkService;
             _notificationService = notificationService;
             _fileSystemService = fileSystemService;
+            _teslaApiService = teslaApiService;
 
             _uploaders = uploaders.ToDictionary(u => u.Name);
         }
@@ -86,31 +88,37 @@ namespace TeslaCam.Services
         
         private IEnumerable<Clip> GetEventClips(ClipType clipType, CancellationToken cancellationToken)
         {
-            var clips = _usbFileSystemService
+            return _usbFileSystemService
                 .GetClips(clipType)
-                .ToArray();
-
-            var clipsToArchive = new List<Clip>();
-
-            foreach (var eventClips in clips.GroupBy(c => c.EventDate))
-            {
-                // Group clips by minute and only take minutes we want to keep
-                var clipsByMinute = eventClips
-                    .GroupBy(c => c.Date)
-                    .OrderByDescending(c => c.Key)
-                    .Take(_options.KeepClipsPerEventAmount);
-
-                // Filter clips in every minute
-                clipsToArchive.AddRange(clipsByMinute
-                    .SelectMany(cbm => cbm)
-                    .Where(IsClipValid)
-                    .Where(c => _options.CamerasToProcess.Contains(c.Camera))
-                    .Where(c => !_archiveService.IsArchived(c)));
-            }
-
-            _archiveService.CreateClips(clips.Except(clipsToArchive), cancellationToken);
+                .Where(IsClipValid)
+                .Where(c => _options.CamerasToProcess.Contains(c.Camera))
+                .Where(c => !_archiveService.IsArchived(c));
             
-            return clipsToArchive;
+            // var clips = _usbFileSystemService
+            //     .GetClips(clipType)
+            //     .ToArray();
+            //
+            // var clipsToArchive = new List<Clip>();
+            //
+            // foreach (var eventClips in clips.GroupBy(c => c.EventDate))
+            // {
+            //     // Group clips by minute and only take minutes we want to keep
+            //     var clipsByMinute = eventClips
+            //         .GroupBy(c => c.Date)
+            //         .OrderByDescending(c => c.Key)
+            //         .Take(_options.KeepClipsPerEventAmount);
+            //
+            //     // Filter clips in every minute
+            //     clipsToArchive.AddRange(clipsByMinute
+            //         .SelectMany(cbm => cbm)
+            //         .Where(IsClipValid)
+            //         .Where(c => _options.CamerasToProcess.Contains(c.Camera))
+            //         .Where(c => !_archiveService.IsArchived(c)));
+            // }
+            //
+            // _archiveService.CreateClips(clips.Except(clipsToArchive), cancellationToken);
+            //
+            // return clipsToArchive;
         }
         
         public async Task UploadClipsAsync(CancellationToken cancellationToken)
@@ -126,7 +134,10 @@ namespace TeslaCam.Services
                 _logger.LogDebug("No Internet connection, skipping upload");
                 return;
             }
-            
+
+            if (_options.ManageSentryMode)
+                await _teslaApiService.EnableSentryModeAsync(cancellationToken);
+
             _logger.LogDebug("Uploading archived clips");
             
             var clips = _archiveService
@@ -152,6 +163,9 @@ namespace TeslaCam.Services
             }
             
             await _notificationService.NotifyAsync("Clips uploaded", $"Uploaded {clips.Length} clips.", cancellationToken);
+            
+            if (_options.ManageSentryMode)
+                await _teslaApiService.DisableSentryModeAsync(cancellationToken);
         }
         
         public void CleanUsbFileSystem(CancellationToken cancellationToken)

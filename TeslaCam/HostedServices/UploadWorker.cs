@@ -9,7 +9,7 @@ namespace TeslaCam.HostedServices
 {
     public class UploadWorker : BackgroundService
     {
-        private const int UploadIntervalSeconds = 15;
+        private const int UploadIntervalSeconds = 10;
 
         private readonly ILogger<UploadWorker> _logger;
         private readonly ITeslaCamService _teslaCamService;

@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -24,37 +25,72 @@ namespace TeslaCam.Services
             _apiClient = new TeslaApiClient(_options.UserName, _options.Password);
         }
 
-        public async Task EnableSentryModeAsync()
+        public async Task EnableSentryModeAsync(CancellationToken cancellationToken)
         {
-            await InitializeAsync();
+            await InitializeAsync(cancellationToken);
+
+            if (!await WakeUpVehicle(cancellationToken))
+                return;
             
-            await _apiClient.WakeUp(_vehicleId);
-            await _apiClient.SetSentryMode(_vehicleId, true);
+            var succeeded = await _apiClient.SetSentryModeAsync(_vehicleId, true, cancellationToken);
+
+            if (!succeeded)
+            {
+                _logger.LogWarning("Enabling Sentry Mode failed");
+                return;
+            }
+            
+            _logger.LogDebug($"Enabled Sentry Mode");
         }
 
-        public async Task DisableSentryModeAsync()
+        public async Task DisableSentryModeAsync(CancellationToken cancellationToken)
         {
-            await InitializeAsync();
+            await InitializeAsync(cancellationToken);
+
+            if (!await WakeUpVehicle(cancellationToken))
+                return;
             
-            await _apiClient.WakeUp(_vehicleId);
-            await _apiClient.SetSentryMode(_vehicleId, false);
+            var succeeded = await _apiClient.SetSentryModeAsync(_vehicleId, true, cancellationToken);
+
+            if (!succeeded)
+            {
+                _logger.LogWarning("Disabling Sentry Mode failed");
+                return;
+            }
+            
+            _logger.LogDebug($"Disabled Sentry Mode");
         }
         
-        private async Task InitializeAsync()
+        private async Task InitializeAsync(CancellationToken cancellationToken)
         {
             if (_vehicleId != default)
                 return;
 
-            var vehicles = await _apiClient.ListVehiclesAsync();
+            var vehicles = await _apiClient.ListVehiclesAsync(cancellationToken);
             var vehicle = vehicles.SingleOrDefault(v => v.VehicleIdentificationNumber == _options.Vin);
 
             if (vehicle == null)
             {
-                _logger.LogError("No vehicle found with the configured VIN in the configured Tesla account");
+                _logger.LogError($"No vehicle found with VIN '{_options.Vin}' in the configured Tesla account");
                 return;
             }
 
             _vehicleId = vehicle.Id;
+            _logger.LogDebug($"Stored vehicle ID '{_vehicleId}'");
+        }
+
+        private async Task<bool> WakeUpVehicle(CancellationToken cancellationToken)
+        {
+            var vehicle = await _apiClient.WakeUpAsync(_vehicleId, cancellationToken);
+
+            if (!vehicle.IsOnline)
+            {
+                _logger.LogWarning("Waking up vehicle failed");
+                return false;
+            }
+            
+            _logger.LogDebug($"Vehicle woken up");
+            return true;
         }
     }
 }
