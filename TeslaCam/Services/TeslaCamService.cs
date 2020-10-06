@@ -18,17 +18,17 @@ namespace TeslaCam.Services
         private readonly TeslaCamOptions _options;
         private readonly ILogger<TeslaCamService> _logger;
         private readonly IKernelService _kernelService;
-        private readonly IUsbService _usbService;
+        private readonly IUsbFileSystemService _usbFileSystemService;
 
         public TeslaCamService(IOptions<TeslaCamOptions> teslaCamOptions, IFileSystemService fileSystemService,
-            ILogger<TeslaCamService> logger, IKernelService kernelService, IUsbService usbService)
+            ILogger<TeslaCamService> logger, IKernelService kernelService, IUsbFileSystemService usbFileSystemService)
         {
             _options = teslaCamOptions.Value;
 
             _fileSystemService = fileSystemService;
             _logger = logger;
             _kernelService = kernelService;
-            _usbService = usbService;
+            _usbFileSystemService = usbFileSystemService;
         }
 
         public void ArchiveRecentClips(CancellationToken cancellationToken)
@@ -44,7 +44,7 @@ namespace TeslaCam.Services
             
             _logger.LogDebug("Archiving Recent clips");
 
-            using var usbContext = _usbService.AcquireUsbContext();
+            using var usbContext = _usbFileSystemService.AcquireContext();
             usbContext.Mount(false);
             
             var clips = _fileSystemService
@@ -78,7 +78,7 @@ namespace TeslaCam.Services
             
             _logger.LogDebug($"Archiving {clipType} clips");
 
-            using var usbContext = _usbService.AcquireUsbContext();
+            using var usbContext = _usbFileSystemService.AcquireContext();
             usbContext.Mount(false);
 
             var clips = _fileSystemService
@@ -117,7 +117,7 @@ namespace TeslaCam.Services
 
         public void CleanUsbDrive(CancellationToken cancellationToken)
         {
-            using (var context = _usbService.AcquireUsbContext())
+            using (var context = _usbFileSystemService.AcquireContext())
             {
                 _kernelService.RemoveMassStorageGadgetModule();
                 context.Mount(true);
