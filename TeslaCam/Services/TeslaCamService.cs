@@ -91,7 +91,7 @@ namespace TeslaCam.Services
                 .ToArray();
 
             var clipsToArchive = new List<Clip>();
-            
+
             foreach (var eventClips in clips.GroupBy(c => c.EventDate))
             {
                 // Group clips by minute and only take minutes we want to keep

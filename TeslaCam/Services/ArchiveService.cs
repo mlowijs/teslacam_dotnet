@@ -48,18 +48,21 @@ namespace TeslaCam.Services
 
         public void CreateClips(IEnumerable<Clip> clips, CancellationToken cancellationToken)
         {
-            var clipsArray = clips.ToArray();
+            var filesToCreate = clips
+                .Select(c => new FileInfo(GetClipArchivePath(c)))
+                .Where(fi => !fi.Exists)
+                .ToArray();
 
-            for (var i = 0; i < clipsArray.Length; i++)
+            for (var i = 0; i < filesToCreate.Length; i++)
             {
                 if (cancellationToken.IsCancellationRequested)
                     break;
 
-                var clip = clipsArray[i];
+                var fileToCreate = filesToCreate[i];
 
-                _logger.LogDebug($"Touching clip '{clip.File.Name}' ({i + 1}/{clipsArray.Length})");
+                _logger.LogDebug($"Creating clip '{fileToCreate.Name}' ({i + 1}/{filesToCreate.Length})");
 
-                File.Create(GetClipArchivePath(clip)).Close();
+                fileToCreate.Create().Close();
             }
         }
 
