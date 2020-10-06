@@ -46,7 +46,7 @@ namespace TeslaCam.Services
             }
         }
 
-        public void TouchClips(IEnumerable<Clip> clips, CancellationToken cancellationToken)
+        public void CreateClips(IEnumerable<Clip> clips, CancellationToken cancellationToken)
         {
             var clipsArray = clips.ToArray();
 
@@ -76,7 +76,7 @@ namespace TeslaCam.Services
             return archiveClip.Exists;
         }
 
-        public IEnumerable<Clip> GetArchivedClips()
+        public IEnumerable<Clip> GetClips()
         {
             var archiveDirectory = new DirectoryInfo(Path.Join(_options.DataDirectory, ArchiveDirectory));
 

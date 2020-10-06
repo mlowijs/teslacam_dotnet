@@ -9,6 +9,5 @@ namespace TeslaCam.Contracts
         IUsbFileSystemContext AcquireContext();
         
         IEnumerable<Clip> GetClips(ClipType clipType);
-        void DeleteClips(IEnumerable<Clip> clips, CancellationToken cancellationToken);
     }
 }

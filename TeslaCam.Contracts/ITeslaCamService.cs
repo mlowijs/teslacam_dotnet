@@ -8,6 +8,6 @@ namespace TeslaCam.Contracts
     {
         void ArchiveClips(ClipType clipType, CancellationToken cancellationToken);
         Task UploadClipsAsync(CancellationToken cancellationToken);
-        void CleanUsbDrive(CancellationToken cancellationToken);
+        void CleanUsbFileSystem(CancellationToken cancellationToken);
     }
 }

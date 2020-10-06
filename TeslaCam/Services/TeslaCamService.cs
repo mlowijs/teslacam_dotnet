@@ -22,12 +22,14 @@ namespace TeslaCam.Services
         private readonly IUsbFileSystemService _usbFileSystemService;
         private readonly INetworkService _networkService;
         private readonly INotificationService _notificationService;
+        private readonly IFileSystemService _fileSystemService;
         
         private readonly Dictionary<string, IUploader> _uploaders;
 
         public TeslaCamService(IOptions<TeslaCamOptions> teslaCamOptions, IArchiveService archiveService,
             ILogger<TeslaCamService> logger, IKernelService kernelService, IUsbFileSystemService usbFileSystemService,
-            IEnumerable<IUploader> uploaders, INetworkService networkService, INotificationService notificationService)
+            IEnumerable<IUploader> uploaders, INetworkService networkService, INotificationService notificationService,
+            IFileSystemService fileSystemService)
         {
             _options = teslaCamOptions.Value;
 
@@ -37,6 +39,7 @@ namespace TeslaCam.Services
             _usbFileSystemService = usbFileSystemService;
             _networkService = networkService;
             _notificationService = notificationService;
+            _fileSystemService = fileSystemService;
 
             _uploaders = uploaders.ToDictionary(u => u.Name);
         }
@@ -105,7 +108,7 @@ namespace TeslaCam.Services
                     .Where(c => !_archiveService.IsArchived(c)));
             }
 
-            _archiveService.TouchClips(clips.Except(clipsToArchive), cancellationToken);
+            _archiveService.CreateClips(clips.Except(clipsToArchive), cancellationToken);
             
             return clipsToArchive;
         }
@@ -127,7 +130,7 @@ namespace TeslaCam.Services
             _logger.LogDebug("Uploading archived clips");
             
             var clips = _archiveService
-                .GetArchivedClips()
+                .GetClips()
                 .ToArray();
             
             if (clips.Length == 0)
@@ -151,7 +154,7 @@ namespace TeslaCam.Services
             await _notificationService.NotifyAsync("Clips uploaded", $"Uploaded {clips.Length} clips.", cancellationToken);
         }
         
-        public void CleanUsbDrive(CancellationToken cancellationToken)
+        public void CleanUsbFileSystem(CancellationToken cancellationToken)
         {
             using (var context = _usbFileSystemService.AcquireContext())
             {
@@ -162,13 +165,13 @@ namespace TeslaCam.Services
                     .Concat(_usbFileSystemService.GetClips(ClipType.Sentry))
                     .Where(c => _archiveService.IsArchived(c));
 
-                _usbFileSystemService.DeleteClips(archivedClips, cancellationToken);
-
-                var uploadedClips = _archiveService.GetUploadedClips();
-                _usbFileSystemService.DeleteClips(uploadedClips, cancellationToken);
+                _fileSystemService.DeleteClips(archivedClips, cancellationToken);
             }
 
             _kernelService.LoadMassStorageGadgetModule();
+            
+            var uploadedClips = _archiveService.GetUploadedClips();
+            _fileSystemService.DeleteClips(uploadedClips, cancellationToken);
         }
 
         private static bool IsClipValid(Clip clip)

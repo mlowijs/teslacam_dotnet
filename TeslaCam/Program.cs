@@ -60,11 +60,12 @@ namespace TeslaCam
                     services.AddOptions<TeslaApiOptions>()
                         .ConfigureSection();
 
-                    services.AddSingleton<ITeslaCamService, TeslaCamService>();
                     services.AddSingleton<IArchiveService, ArchiveService>();
-                    services.AddSingleton<INetworkService, NetworkService>();
+                    services.AddSingleton<IFileSystemService, FileSystemService>();
                     services.AddSingleton<IKernelService, KernelService>();
+                    services.AddSingleton<INetworkService, NetworkService>();
                     services.AddSingleton<ITeslaApiService, TeslaApiService>();
+                    services.AddSingleton<ITeslaCamService, TeslaCamService>();
                     services.AddSingleton<IUsbFileSystemService, UsbFileSystemService>();
 
                     services.AddSingleton<INotificationService, NotificationService>();

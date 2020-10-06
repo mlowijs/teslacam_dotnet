@@ -37,7 +37,7 @@ namespace TeslaCam.HostedServices
                     if (DateTimeOffset.UtcNow < _nextCleanTime)
                         continue;
 
-                    _teslaCamService.CleanUsbDrive(stoppingToken);
+                    _teslaCamService.CleanUsbFileSystem(stoppingToken);
 
                     _nextCleanTime = DateTimeOffset.UtcNow + _options.CleanInterval;
                 }
