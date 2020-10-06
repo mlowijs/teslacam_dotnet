@@ -15,7 +15,7 @@ namespace TeslaCam.Services
     {
         private const long MegabyteInBytes = 1 * 1024 * 1024;
         
-        private readonly IFileSystemService _fileSystemService;
+        private readonly IArchiveService _archiveService;
         private readonly TeslaCamOptions _options;
         private readonly ILogger<TeslaCamService> _logger;
         private readonly IKernelService _kernelService;
@@ -25,13 +25,13 @@ namespace TeslaCam.Services
         
         private readonly Dictionary<string, IUploader> _uploaders;
 
-        public TeslaCamService(IOptions<TeslaCamOptions> teslaCamOptions, IFileSystemService fileSystemService,
+        public TeslaCamService(IOptions<TeslaCamOptions> teslaCamOptions, IArchiveService archiveService,
             ILogger<TeslaCamService> logger, IKernelService kernelService, IUsbFileSystemService usbFileSystemService,
             IEnumerable<IUploader> uploaders, INetworkService networkService, INotificationService notificationService)
         {
             _options = teslaCamOptions.Value;
 
-            _fileSystemService = fileSystemService;
+            _archiveService = archiveService;
             _logger = logger;
             _kernelService = kernelService;
             _usbFileSystemService = usbFileSystemService;
@@ -69,21 +69,21 @@ namespace TeslaCam.Services
             }
             
             _logger.LogDebug($"Will archive {clips.Length} {clipType} clips");
-            _fileSystemService.ArchiveClips(clips, cancellationToken);
+            _archiveService.ArchiveClips(clips, cancellationToken);
         }
 
         private IEnumerable<Clip> GetRecentClips()
         {
-            return _fileSystemService
+            return _usbFileSystemService
                 .GetClips(ClipType.Recent)
                 .Where(IsClipValid)
                 .Where(c => _options.CamerasToProcess.Contains(c.Camera))
-                .Where(c => !_fileSystemService.IsArchived(c));
+                .Where(c => !_archiveService.IsArchived(c));
         }
         
         private IEnumerable<Clip> GetEventClips(ClipType clipType, CancellationToken cancellationToken)
         {
-            var clips = _fileSystemService
+            var clips = _usbFileSystemService
                 .GetClips(clipType)
                 .ToArray();
 
@@ -102,10 +102,10 @@ namespace TeslaCam.Services
                     .SelectMany(cbm => cbm)
                     .Where(IsClipValid)
                     .Where(c => _options.CamerasToProcess.Contains(c.Camera))
-                    .Where(c => !_fileSystemService.IsArchived(c)));
+                    .Where(c => !_archiveService.IsArchived(c)));
             }
 
-            _fileSystemService.TouchClips(clips.Except(clipsToArchive), cancellationToken);
+            _archiveService.TouchClips(clips.Except(clipsToArchive), cancellationToken);
             
             return clipsToArchive;
         }
@@ -126,7 +126,7 @@ namespace TeslaCam.Services
             
             _logger.LogDebug("Uploading archived clips");
             
-            var clips = _fileSystemService
+            var clips = _archiveService
                 .GetArchivedClips()
                 .ToArray();
             
@@ -145,7 +145,7 @@ namespace TeslaCam.Services
                 _logger.LogInformation($"Uploading clip '{clip.File.Name}' ({i + 1}/{clips.Length})");
 
                 if (await uploader.UploadClipAsync(clip, cancellationToken))
-                    _fileSystemService.TruncateClip(clip);
+                    _archiveService.TruncateClip(clip);
             }
             
             await _notificationService.NotifyAsync("Clips uploaded", $"Uploaded {clips.Length} clips.", cancellationToken);
@@ -158,14 +158,14 @@ namespace TeslaCam.Services
                 _kernelService.RemoveMassStorageGadgetModule();
                 context.Mount(true);
 
-                var archivedClips = _fileSystemService.GetClips(ClipType.Saved)
-                    .Concat(_fileSystemService.GetClips(ClipType.Sentry))
-                    .Where(c => _fileSystemService.IsArchived(c));
+                var archivedClips = _usbFileSystemService.GetClips(ClipType.Saved)
+                    .Concat(_usbFileSystemService.GetClips(ClipType.Sentry))
+                    .Where(c => _archiveService.IsArchived(c));
 
-                _fileSystemService.DeleteClips(archivedClips, cancellationToken);
+                _usbFileSystemService.DeleteClips(archivedClips, cancellationToken);
 
-                var uploadedClips = _fileSystemService.GetUploadedClips();
-                _fileSystemService.DeleteClips(uploadedClips, cancellationToken);
+                var uploadedClips = _archiveService.GetUploadedClips();
+                _usbFileSystemService.DeleteClips(uploadedClips, cancellationToken);
             }
 
             _kernelService.LoadMassStorageGadgetModule();

@@ -18,7 +18,7 @@ namespace TeslaCam
 {
     public class Program
     {
-        private const string ConfigurationFilePath = "/etc/teslacam.json";
+        private const string DefaultConfigurationFilePath = "/etc/teslacam.json";
         private const string RootUserName = "root";
         
         private static async Task Main(string[] args)
@@ -29,7 +29,7 @@ namespace TeslaCam
                 return;
             }
             
-            var hostBuilder = GetHostBuilder(ConfigurationFilePath, args.Contains("-q"))
+            var hostBuilder = GetHostBuilder(DefaultConfigurationFilePath, args.Contains("-q"))
                 .Build();
 
             await hostBuilder.RunAsync();
@@ -61,7 +61,7 @@ namespace TeslaCam
                         .ConfigureSection();
 
                     services.AddSingleton<ITeslaCamService, TeslaCamService>();
-                    services.AddSingleton<IFileSystemService, FileSystemService>();
+                    services.AddSingleton<IArchiveService, ArchiveService>();
                     services.AddSingleton<INetworkService, NetworkService>();
                     services.AddSingleton<IKernelService, KernelService>();
                     services.AddSingleton<ITeslaApiService, TeslaApiService>();
