@@ -19,10 +19,11 @@ namespace TeslaCam
     public class Program
     {
         private const string ConfigurationFilePath = "/etc/teslacam.json";
+        private const string RootUserName = "root";
         
         private static async Task Main(string[] args)
         {
-            if (Environment.UserName != "root")
+            if (Environment.OSVersion.Platform == PlatformID.Unix && Environment.UserName != RootUserName)
             {
                 Console.WriteLine("Must be run as root.");
                 return;
@@ -65,12 +66,11 @@ namespace TeslaCam
                     services.AddSingleton<IKernelService, KernelService>();
                     services.AddSingleton<ITeslaApiService, TeslaApiService>();
                     services.AddSingleton<IUsbFileSystemService, UsbFileSystemService>();
-                    
-                    services.AddSingleton<IUploadService, UploadService>();
-                    services.AddAzureBlobStorageUploader();
 
                     services.AddSingleton<INotificationService, NotificationService>();
                     services.AddPushoverNotifier();
+                    
+                    services.AddAzureBlobStorageUploader();
 
                     services.AddHostedService<ArchiveWorker>();
                     services.AddHostedService<UploadWorker>();

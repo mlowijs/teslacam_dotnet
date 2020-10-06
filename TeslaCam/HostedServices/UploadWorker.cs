@@ -12,12 +12,12 @@ namespace TeslaCam.HostedServices
         private const int UploadIntervalSeconds = 10;
 
         private readonly ILogger<UploadWorker> _logger;
-        private readonly IUploadService _uploadService;
+        private readonly ITeslaCamService _teslaCamService;
 
-        public UploadWorker(ILogger<UploadWorker> logger, IUploadService uploadService)
+        public UploadWorker(ILogger<UploadWorker> logger, ITeslaCamService teslaCamService)
         {
             _logger = logger;
-            _uploadService = uploadService;
+            _teslaCamService = teslaCamService;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -30,7 +30,7 @@ namespace TeslaCam.HostedServices
 
                     _logger.LogDebug("Starting uploading");
 
-                    await _uploadService.UploadClipsAsync(stoppingToken);
+                    await _teslaCamService.UploadClipsAsync(stoppingToken);
 
                     _logger.LogDebug("Finished uploading");
                 }

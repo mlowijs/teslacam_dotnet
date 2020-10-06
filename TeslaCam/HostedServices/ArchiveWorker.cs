@@ -31,9 +31,9 @@ namespace TeslaCam.HostedServices
 
                     _logger.LogDebug("Starting archiving");
 
-                    _teslaCamService.ArchiveRecentClips(stoppingToken);
-                    _teslaCamService.ArchiveEventClips(ClipType.Saved, stoppingToken);
-                    _teslaCamService.ArchiveEventClips(ClipType.Sentry, stoppingToken);
+                    _teslaCamService.ArchiveClips(ClipType.Recent, stoppingToken);
+                    _teslaCamService.ArchiveClips(ClipType.Saved, stoppingToken);
+                    _teslaCamService.ArchiveClips(ClipType.Sentry, stoppingToken);
 
                     _logger.LogDebug("Finished archiving");
                 }
