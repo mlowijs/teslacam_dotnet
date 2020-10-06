@@ -50,7 +50,7 @@ namespace TeslaCam.Services
             if (!await WakeUpVehicle(cancellationToken))
                 return;
             
-            var succeeded = await _apiClient.SetSentryModeAsync(_vehicleId, true, cancellationToken);
+            var succeeded = await _apiClient.SetSentryModeAsync(_vehicleId, false, cancellationToken);
 
             if (!succeeded)
             {

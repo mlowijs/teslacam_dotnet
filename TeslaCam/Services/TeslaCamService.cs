@@ -135,9 +135,6 @@ namespace TeslaCam.Services
                 return;
             }
 
-            if (_options.ManageSentryMode)
-                await _teslaApiService.EnableSentryModeAsync(cancellationToken);
-
             _logger.LogDebug("Uploading archived clips");
             
             var clips = _archiveService
@@ -150,8 +147,11 @@ namespace TeslaCam.Services
                 return;
             }
 
-            _logger.LogDebug($"Will upload {clips.Length} clips");
+            if (_options.ManageSentryMode)
+                await _teslaApiService.EnableSentryModeAsync(cancellationToken);
             
+            _logger.LogDebug($"Will upload {clips.Length} clips");
+
             for (var i = 0; i < clips.Length; i++)
             {
                 var clip = clips[i];
