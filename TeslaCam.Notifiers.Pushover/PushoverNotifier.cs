@@ -57,7 +57,7 @@ namespace TeslaCam.Notifiers.Pushover
             }
             catch (TaskCanceledException httpRequestException)
             {
-                _logger.LogError(httpRequestException, "HTTP request failed");
+                _logger.LogError(httpRequestException, "Error sending notification:");
             }
         }
     }
