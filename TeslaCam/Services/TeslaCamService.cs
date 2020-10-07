@@ -129,7 +129,7 @@ namespace TeslaCam.Services
             if (!_uploaders.TryGetValue(_options.Uploader, out var uploader))
                 return;
             
-            if (uploader.RequiresInternet && !await _networkService.IsConnectedToInternet())
+            if (uploader.RequiresInternet && !await _networkService.IsConnectedToInternetAsync())
             {
                 _logger.LogDebug("No Internet connection, skipping upload");
                 return;
