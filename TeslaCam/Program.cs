@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Hosting.Systemd;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
 using TeslaCam.Contracts;
@@ -18,7 +19,7 @@ namespace TeslaCam
 {
     public class Program
     {
-        private const string DefaultConfigurationFilePath = "/etc/teslacam.json";
+        private const string ConfigurationFilePath = "/etc/teslacam.json";
         private const string RootUserName = "root";
         
         private static async Task Main(string[] args)
@@ -28,19 +29,19 @@ namespace TeslaCam
                 Console.WriteLine("Must be run as root.");
                 return;
             }
-            
-            var hostBuilder = GetHostBuilder(DefaultConfigurationFilePath, args.Contains("-q"))
+
+            var hostBuilder = GetHostBuilder(args.Contains("-q"))
                 .Build();
 
             await hostBuilder.RunAsync();
         }
 
-        private static IHostBuilder GetHostBuilder(string configurationFilePath, bool quiet)
+        private static IHostBuilder GetHostBuilder(bool quiet)
         {
             return new HostBuilder()
                 .ConfigureAppConfiguration(builder =>
                 {
-                    builder.AddJsonFile(configurationFilePath, false)
+                    builder.AddJsonFile(ConfigurationFilePath, true)
                         .AddEnvironmentVariables();
                 })
                 .ConfigureLogging(builder =>
@@ -49,7 +50,9 @@ namespace TeslaCam
                         .SetMinimumLevel(quiet ? LogLevel.Information : LogLevel.Debug)
                         .AddConsole(options =>
                         {
-                            options.Format = ConsoleLoggerFormat.Systemd;
+                            options.Format = SystemdHelpers.IsSystemdService()
+                                ? ConsoleLoggerFormat.Systemd
+                                : ConsoleLoggerFormat.Default;
                         });
                 })
                 .ConfigureServices(services =>
