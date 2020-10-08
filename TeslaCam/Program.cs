@@ -71,7 +71,9 @@ namespace TeslaCam
                     services.AddSingleton<ITeslaCamService, TeslaCamService>();
                     services.AddSingleton<IUsbFileSystemService, UsbFileSystemService>();
 
-                    services.AddSingleton<INotificationService, NotificationService>();
+                    services.AddSingleton<NotificationService>();
+                    services.AddSingleton<INotificationService>(sp => sp.GetRequiredService<NotificationService>());
+                    services.AddSingleton<INotificationWorkerService>(sp => sp.GetRequiredService<NotificationService>());
                     services.AddPushoverNotifier();
                     
                     services.AddAzureBlobStorageUploader();
