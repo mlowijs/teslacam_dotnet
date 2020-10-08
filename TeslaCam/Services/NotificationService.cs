@@ -68,13 +68,13 @@ namespace TeslaCam.Services
 
                 if (notification.Attempts < MaxAttempts)
                 {
-                    _logger.LogDebug($"Processing notification failed, requeueing");
+                    _logger.LogDebug("Processing notification failed, requeueing");
                     
                     _notificationQueue.Enqueue(notification);
                 }
                 else
                 {
-                    _logger.LogDebug($"Maximum attempts exceeded, discarding notification");
+                    _logger.LogDebug("Maximum attempts exceeded, discarding notification");
                 }
             }
         }
