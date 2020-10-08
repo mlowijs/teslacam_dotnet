@@ -7,6 +7,6 @@ namespace TeslaCam.Contracts
     {
         string Name { get; }
 
-        Task NotifyAsync(string title, string message, CancellationToken cancellationToken);
+        Task<bool>NotifyAsync(string title, string message, CancellationToken cancellationToken);
     }
 }

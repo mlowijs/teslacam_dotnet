@@ -32,7 +32,7 @@ namespace TeslaCam.Notifiers.Pushover
         
         public string Name => "Pushover";
         
-        public async Task NotifyAsync(string title, string message, CancellationToken cancellationToken)
+        public async Task<bool> NotifyAsync(string title, string message, CancellationToken cancellationToken)
         {
             var content = new FormUrlEncodedContent(new Dictionary<string, string>
             {
@@ -53,12 +53,18 @@ namespace TeslaCam.Notifiers.Pushover
                 var responseString = await responseMessage.Content.ReadAsStringAsync();
 
                 if (!responseMessage.IsSuccessStatusCode)
+                {
                     _logger.LogError($"Error sending notification: {responseString}");
+                    return false;
+                }
             }
             catch (TaskCanceledException httpRequestException)
             {
                 _logger.LogError(httpRequestException, "Error sending notification:");
+                return false;
             }
+
+            return true;
         }
     }
 }

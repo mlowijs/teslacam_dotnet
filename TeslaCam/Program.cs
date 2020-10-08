@@ -79,6 +79,7 @@ namespace TeslaCam
                     services.AddHostedService<ArchiveWorker>();
                     services.AddHostedService<UploadWorker>();
                     services.AddHostedService<CleanWorker>();
+                    services.AddHostedService<NotificationWorker>();
                 })
                 .UseSystemd();
         }
