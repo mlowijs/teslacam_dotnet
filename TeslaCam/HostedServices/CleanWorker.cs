@@ -32,14 +32,14 @@ namespace TeslaCam.HostedServices
             {
                 try
                 {
+                    if (DateTimeOffset.UtcNow >= _nextCleanTime)
+                    {
+                        _teslaCamService.CleanUsbFileSystem(stoppingToken);
+
+                        _nextCleanTime = DateTimeOffset.UtcNow + _options.CleanInterval;
+                    }
+
                     await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
-
-                    if (DateTimeOffset.UtcNow < _nextCleanTime)
-                        continue;
-
-                    _teslaCamService.CleanUsbFileSystem(stoppingToken);
-
-                    _nextCleanTime = DateTimeOffset.UtcNow + _options.CleanInterval;
                 }
                 catch (TaskCanceledException)
                 {

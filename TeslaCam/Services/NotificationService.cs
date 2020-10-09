@@ -17,7 +17,7 @@ namespace TeslaCam.Services
             public string Title { get; set; } = "";
             public string Message { get; set; } = "";
 
-            public int Attempts { get; set; } = 1;
+            public int Attempts { get; set; }
         }
 
         private const int MaxAttempts = 3;
@@ -39,7 +39,7 @@ namespace TeslaCam.Services
         
         public Task NotifyAsync(string title, string message, CancellationToken cancellationToken)
         {
-            if (!_notifiers.TryGetValue(_options.Notifier, out var notifier))
+            if (!_notifiers.ContainsKey(_options.Notifier))
                 return Task.CompletedTask;
 
             _notificationQueue.Enqueue(new Notification
@@ -59,7 +59,7 @@ namespace TeslaCam.Services
 
             while (_notificationQueue.TryDequeue(out var notification))
             {
-                _logger.LogDebug($"Processing notification, attempt {notification.Attempts}/{MaxAttempts}");
+                _logger.LogDebug($"Processing notification, attempt {notification.Attempts + 1}/{MaxAttempts}");
 
                 if (await notifier.NotifyAsync(notification.Title, notification.Message, cancellationToken))
                     continue;
