@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -46,7 +47,7 @@ namespace TeslaCam.Services
             _uploaders = uploaders.ToDictionary(u => u.Name);
         }
 
-        public void ArchiveClips(ClipType clipType, CancellationToken cancellationToken)
+        public async Task ArchiveClipsAsync(ClipType clipType, CancellationToken cancellationToken)
         {
             if (cancellationToken.IsCancellationRequested)
                 return;
@@ -59,22 +60,32 @@ namespace TeslaCam.Services
             
             _logger.LogDebug($"Archiving {clipType} clips");
 
-            using var usbContext = _usbFileSystemService.AcquireContext();
-            usbContext.Mount(false);
-
-            var clips = (clipType == ClipType.Recent
-                    ? GetRecentClips()
-                    : GetEventClips(clipType, cancellationToken))
-                .ToArray();
-            
-            if (clips.Length == 0)
+            using (var usbContext = _usbFileSystemService.AcquireContext())
             {
-                _logger.LogDebug($"No new {clipType} clips to archive");
-                return;
+                usbContext.Mount(false);
+
+                var clips = (clipType == ClipType.Recent
+                        ? GetRecentClips()
+                        : GetEventClips(clipType, cancellationToken))
+                    .ToArray();
+
+                if (clips.Length == 0)
+                {
+                    _logger.LogDebug($"No new {clipType} clips to archive");
+                    return;
+                }
+
+                _logger.LogDebug($"Will archive {clips.Length} {clipType} clips");
+                _archiveService.ArchiveClips(clips, cancellationToken);
             }
+
+            var rootDirectoryInfo = DriveInfo.GetDrives()
+                .Single(d => d.RootDirectory.Name == "/");
             
-            _logger.LogDebug($"Will archive {clips.Length} {clipType} clips");
-            _archiveService.ArchiveClips(clips, cancellationToken);
+            var diskUsage = 1m - (decimal)rootDirectoryInfo.AvailableFreeSpace / rootDirectoryInfo.TotalSize;
+
+            if (diskUsage > 0.8m)
+                await _notificationService.NotifyAsync("Disk Usage", "TeslaCam storage usage is over 80%.", cancellationToken);
         }
 
         private IEnumerable<Clip> GetRecentClips()
@@ -162,7 +173,7 @@ namespace TeslaCam.Services
                     _archiveService.TruncateClip(clip);
             }
             
-            await _notificationService.NotifyAsync("Clips uploaded", $"Uploaded {clips.Length} clips.", cancellationToken);
+            await _notificationService.NotifyAsync("Clips Uploaded", $"Uploaded {clips.Length} clips.", cancellationToken);
             
             if (_options.ManageSentryMode)
                 await _teslaApiService.DisableSentryModeAsync(cancellationToken);
