@@ -28,8 +28,7 @@ namespace TeslaCam.Uploaders.AzureBlobStorage
 
         public async Task<bool> UploadClipAsync(Clip clip, CancellationToken cancellationToken)
         {
-            var blobName = @$"{clip.Date:yyyy\/MM\/dd}/{clip.File.Name}";
-            var blobClient = _blobContainerClient.GetBlobClient(blobName);
+            var blobClient = _blobContainerClient.GetBlobClient(clip.File.Name);
 
             if (await blobClient.ExistsAsync(cancellationToken))
                 return true;

@@ -106,11 +106,11 @@ namespace TeslaCam.Services
 
         private static string GetArchiveFileName(Clip clip)
         {
-            var baseName = $"{clip.Date.ToString(ArchiveDateFormat)}_{clip.Type:D}_{clip.Camera:D}";
+            var baseName = $"{clip.Date.UtcDateTime.ToString(ArchiveDateFormat)}_{clip.Type:D}_{clip.Camera:D}";
 
-            return clip.Type == ClipType.Recent
-                ? $"{baseName}.mp4"
-                : $"{baseName}_{clip.EventDate!.Value.ToString(ArchiveDateFormat)}.mp4";
+            return clip.Type != ClipType.Recent && clip.EventDate != null
+                ? $"{baseName}_{clip.EventDate.Value.UtcDateTime.ToString(ArchiveDateFormat)}.mp4"
+                : $"{baseName}.mp4";
         }
 
         private static Clip CreateClip(FileInfo fileInfo)

@@ -163,7 +163,7 @@ namespace TeslaCam.Services
             if (eventDirectoryName != null)
             {
                 clip.EventDate = DateTimeOffset.ParseExact(eventDirectoryName, TeslaCamDateTimeFormat, null,
-                    DateTimeStyles.AssumeUniversal);
+                    DateTimeStyles.AssumeLocal);
             }
             
             var regexMatch = TeslaCamDateTimeCameraRegex.Match(fileInfo.Name);
@@ -172,7 +172,7 @@ namespace TeslaCam.Services
                 return clip;
 
             clip.Date = DateTimeOffset.ParseExact(regexMatch.Groups[1].Value, TeslaCamDateTimeFormat, null,
-                DateTimeStyles.AssumeUniversal);
+                DateTimeStyles.AssumeLocal);
 
             clip.Camera = regexMatch.Groups[2].Value switch
             {
