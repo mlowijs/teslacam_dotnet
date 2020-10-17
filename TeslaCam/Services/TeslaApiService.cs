@@ -14,7 +14,7 @@ namespace TeslaCam.Services
 {
     public class TeslaApiService : ITeslaApiService
     {
-        private const string TokenInformationFileName = "tesla_api_token_info.json";
+        private const string TokenInformationFileName = "tesla_api.json";
         
         private readonly ILogger<TeslaApiService> _logger;
         private readonly TeslaApiOptions _options;
@@ -98,7 +98,7 @@ namespace TeslaCam.Services
             if (tokenInfoFile.Exists)
             {
                 await using var fileStream = tokenInfoFile.OpenRead();
-
+                
                 var tokenInformation =
                     await JsonSerializer.DeserializeAsync<TokenInformation>(fileStream,
                         cancellationToken: cancellationToken);

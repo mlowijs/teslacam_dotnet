@@ -103,7 +103,7 @@ namespace TeslaApi
             {
                 var expiresAt = DateTimeOffset
                     .FromUnixTimeSeconds(_tokenInformation.CreatedAt)
-                    .AddSeconds(_tokenInformation.ExpiresIn * 0.9);
+                    .AddSeconds(_tokenInformation.ExpiresIn * 0.5);
 
                 if (expiresAt > DateTimeOffset.UtcNow)
                     return;
