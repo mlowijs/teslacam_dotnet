@@ -19,10 +19,9 @@ namespace TeslaApi
         private readonly HttpClient _httpClient;
         private readonly string? _email;
         private readonly string? _password;
-        
-        private string? _refreshToken;
-        private DateTimeOffset _expiresAt;
 
+        private TokenInformation? _tokenInformation;
+        
         private TeslaApiClient()
         {
             _httpClient = new HttpClient
@@ -38,32 +37,30 @@ namespace TeslaApi
             _password = password;
         }
 
+        public event Action<TokenInformation>? TokenInformationChanged;
+        
         public static TeslaApiClient FromTokenInformation(TokenInformation tokenInformation)
         {
-            var apiClient = new TeslaApiClient();
-            apiClient.SetTokenInformation(tokenInformation);
+            var apiClient = new TeslaApiClient
+            {
+                _tokenInformation = tokenInformation
+            };
 
             return apiClient;
         }
 
-        public async Task<IEnumerable<TeslaVehicle>> ListVehiclesAsync(CancellationToken cancellationToken)
+        public Task<IEnumerable<TeslaVehicle>> ListVehiclesAsync(CancellationToken cancellationToken)
         {
-            await AuthenticateAsync(cancellationToken);
-
-            return await DoRequestAsync<IEnumerable<TeslaVehicle>>(HttpMethod.Get, "api/1/vehicles", null, cancellationToken);
+            return DoRequestAsync<IEnumerable<TeslaVehicle>>(HttpMethod.Get, "api/1/vehicles", null, cancellationToken);
         }
         
-        public async Task<TeslaVehicle> WakeUpAsync(long vehicleId, CancellationToken cancellationToken)
+        public Task<TeslaVehicle> WakeUpAsync(long vehicleId, CancellationToken cancellationToken)
         {
-            await AuthenticateAsync(cancellationToken);
-
-            return await DoRequestAsync<TeslaVehicle>(HttpMethod.Post, $"api/1/vehicles/{vehicleId}/wake_up", null, cancellationToken);
+            return DoRequestAsync<TeslaVehicle>(HttpMethod.Post, $"api/1/vehicles/{vehicleId}/wake_up", null, cancellationToken);
         }
         
         public async Task<bool> SetSentryModeAsync(long vehicleId, bool enabled, CancellationToken cancellationToken)
         {
-            await AuthenticateAsync(cancellationToken);
-
             var response = await DoRequestAsync<CommandResponse<bool>>(
                 HttpMethod.Post,
                 $"api/1/vehicles/{vehicleId}/command/set_sentry_mode",
@@ -72,63 +69,16 @@ namespace TeslaApi
 
             return response.Result;
         }
-        
-        private async Task AuthenticateAsync(CancellationToken cancellationToken)
-        {
-            if (_httpClient.DefaultRequestHeaders.Authorization != null && _expiresAt > DateTimeOffset.UtcNow)
-                return;
-
-            var tokenInformation = await RefreshAccessTokenAsync(cancellationToken);
-
-            if (tokenInformation == null)
-            {
-                tokenInformation = await DoTokenRequestAsync(new Dictionary<string, string?>
-                {
-                    ["grant_type"] = "password",
-                    ["client_id"] = OauthClientId,
-                    ["client_secret"] = OauthClientSecret,
-                    ["email"] = _email,
-                    ["password"] = _password
-                }, cancellationToken);
-
-                if (tokenInformation == null)
-                    throw new TeslaApiException($"Tesla API authentication failed");
-            }
-            
-            SetTokenInformation(tokenInformation);
-        }
-
-        private async Task<TokenInformation?> RefreshAccessTokenAsync(CancellationToken cancellationToken)
-        {
-            if (_refreshToken == null)
-                return null;
-
-            return await DoTokenRequestAsync(new Dictionary<string, string?>
-            {
-                ["grant_type"] = "refresh_token",
-                ["refresh_token"] = _refreshToken
-            }, cancellationToken);
-        }
-
-        private async Task<TokenInformation?> DoTokenRequestAsync(Dictionary<string, string?> formData, CancellationToken cancellationToken)
-        {
-            var requestMessage = new HttpRequestMessage(HttpMethod.Post, "oauth/token")
-            {
-                Content = new FormUrlEncodedContent(formData)
-            };
-            
-            var responseMessage = await _httpClient.SendAsync(requestMessage, cancellationToken);
-            var responseString = await responseMessage.Content.ReadAsStringAsync();
-
-            return responseMessage.IsSuccessStatusCode
-                ? JsonSerializer.Deserialize<TokenInformation>(responseString)
-                : null;
-        }
 
         private async Task<TResponse> DoRequestAsync<TResponse>(HttpMethod method, string url, object? payload, CancellationToken cancellationToken)
             where TResponse : class
         {
+            await AuthenticateAsync(cancellationToken);
+            
             var requestMessage = new HttpRequestMessage(method, url);
+
+            requestMessage.Headers.Authorization =
+                new AuthenticationHeaderValue("Bearer", _tokenInformation!.AccessToken);
             
             if (payload != null)
                 requestMessage.Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
@@ -147,15 +97,52 @@ namespace TeslaApi
             return apiResponse.Response;
         }
         
-        private void SetTokenInformation(TokenInformation tokenInformation)
+        private async Task AuthenticateAsync(CancellationToken cancellationToken)
         {
-            _httpClient.DefaultRequestHeaders.Authorization =
-                new AuthenticationHeaderValue("Bearer", tokenInformation.AccessToken);
+            if (_tokenInformation != null)
+            {
+                var expiresAt = DateTimeOffset
+                    .FromUnixTimeSeconds(_tokenInformation.CreatedAt)
+                    .AddSeconds(_tokenInformation.ExpiresIn * 0.9);
+
+                if (expiresAt > DateTimeOffset.UtcNow)
+                    return;
+                
+                _tokenInformation = await DoTokenRequestAsync(new Dictionary<string, string?>
+                {
+                    ["grant_type"] = "refresh_token",
+                    ["refresh_token"] = _tokenInformation.RefreshToken
+                }, cancellationToken);
+            }
+
+            _tokenInformation ??= await DoTokenRequestAsync(new Dictionary<string, string?>
+            {
+                ["grant_type"] = "password",
+                ["client_id"] = OauthClientId,
+                ["client_secret"] = OauthClientSecret,
+                ["email"] = _email,
+                ["password"] = _password
+            }, cancellationToken);
             
-            _refreshToken = tokenInformation.RefreshToken;
-            _expiresAt = DateTimeOffset
-                .FromUnixTimeSeconds(tokenInformation.CreatedAt)
-                .AddSeconds(tokenInformation.ExpiresIn);
+            if (_tokenInformation == null)
+                throw new TeslaApiException($"Tesla API authentication failed");
+            
+            TokenInformationChanged?.Invoke(_tokenInformation);
+        }
+        
+        private async Task<TokenInformation?> DoTokenRequestAsync(Dictionary<string, string?> formData, CancellationToken cancellationToken)
+        {
+            var requestMessage = new HttpRequestMessage(HttpMethod.Post, "oauth/token")
+            {
+                Content = new FormUrlEncodedContent(formData)
+            };
+            
+            var responseMessage = await _httpClient.SendAsync(requestMessage, cancellationToken);
+            var responseString = await responseMessage.Content.ReadAsStringAsync();
+
+            return responseMessage.IsSuccessStatusCode
+                ? JsonSerializer.Deserialize<TokenInformation>(responseString)
+                : null;
         }
     }
 }
