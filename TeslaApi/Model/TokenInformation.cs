@@ -2,7 +2,7 @@ using System.Text.Json.Serialization;
 
 namespace TeslaApi.Model
 {
-    public class TokenResponse
+    public class TokenInformation
     {
         [JsonPropertyName("access_token")]
         public string AccessToken { get; set; } = "";

@@ -17,21 +17,33 @@ namespace TeslaApi
         private const string OauthClientSecret = "c7257eb71a564034f9419ee651c7d0e5f7aa6bfbd18bafb5c5c033b093bb2fa3";
         
         private readonly HttpClient _httpClient;
-        private readonly string _email;
-        private readonly string _password;
+        private readonly string? _email;
+        private readonly string? _password;
         
         private string? _refreshToken;
         private DateTimeOffset _expiresAt;
-        
-        public TeslaApiClient(string email, string password)
+
+        private TeslaApiClient()
         {
-            _email = email;
-            _password = password;
-            
             _httpClient = new HttpClient
             {
                 BaseAddress = new Uri(TeslaApiBaseAddress),
             };
+        }
+        
+        public TeslaApiClient(string email, string password)
+            : this()
+        {
+            _email = email;
+            _password = password;
+        }
+
+        public static TeslaApiClient FromTokenInformation(TokenInformation tokenInformation)
+        {
+            var apiClient = new TeslaApiClient();
+            apiClient.SetTokenInformation(tokenInformation);
+
+            return apiClient;
         }
 
         public async Task<IEnumerable<TeslaVehicle>> ListVehiclesAsync(CancellationToken cancellationToken)
@@ -66,11 +78,11 @@ namespace TeslaApi
             if (_httpClient.DefaultRequestHeaders.Authorization != null && _expiresAt > DateTimeOffset.UtcNow)
                 return;
 
-            var tokenResponse = await RefreshAccessTokenAsync(cancellationToken);
+            var tokenInformation = await RefreshAccessTokenAsync(cancellationToken);
 
-            if (tokenResponse == null)
+            if (tokenInformation == null)
             {
-                tokenResponse = await DoTokenRequestAsync(new Dictionary<string, string>
+                tokenInformation = await DoTokenRequestAsync(new Dictionary<string, string?>
                 {
                     ["grant_type"] = "password",
                     ["client_id"] = OauthClientId,
@@ -79,32 +91,26 @@ namespace TeslaApi
                     ["password"] = _password
                 }, cancellationToken);
 
-                if (tokenResponse == null)
+                if (tokenInformation == null)
                     throw new TeslaApiException($"Tesla API authentication failed");
             }
             
-            _httpClient.DefaultRequestHeaders.Authorization =
-                new AuthenticationHeaderValue("Bearer", tokenResponse.AccessToken);
-            
-            _refreshToken = tokenResponse.RefreshToken;
-            _expiresAt = DateTimeOffset
-                .FromUnixTimeSeconds(tokenResponse.CreatedAt)
-                .AddSeconds(tokenResponse.ExpiresIn);
+            SetTokenInformation(tokenInformation);
         }
 
-        private async Task<TokenResponse?> RefreshAccessTokenAsync(CancellationToken cancellationToken)
+        private async Task<TokenInformation?> RefreshAccessTokenAsync(CancellationToken cancellationToken)
         {
             if (_refreshToken == null)
                 return null;
 
-            return await DoTokenRequestAsync(new Dictionary<string, string>
+            return await DoTokenRequestAsync(new Dictionary<string, string?>
             {
                 ["grant_type"] = "refresh_token",
                 ["refresh_token"] = _refreshToken
             }, cancellationToken);
         }
 
-        private async Task<TokenResponse?> DoTokenRequestAsync(IDictionary<string, string> formData, CancellationToken cancellationToken)
+        private async Task<TokenInformation?> DoTokenRequestAsync(Dictionary<string, string?> formData, CancellationToken cancellationToken)
         {
             var requestMessage = new HttpRequestMessage(HttpMethod.Post, "oauth/token")
             {
@@ -115,7 +121,7 @@ namespace TeslaApi
             var responseString = await responseMessage.Content.ReadAsStringAsync();
 
             return responseMessage.IsSuccessStatusCode
-                ? JsonSerializer.Deserialize<TokenResponse>(responseString)
+                ? JsonSerializer.Deserialize<TokenInformation>(responseString)
                 : null;
         }
 
@@ -139,6 +145,17 @@ namespace TeslaApi
                 JsonSerializer.Deserialize<TeslaApiResponse<TResponse>>(responseString);
 
             return apiResponse.Response;
+        }
+        
+        private void SetTokenInformation(TokenInformation tokenInformation)
+        {
+            _httpClient.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", tokenInformation.AccessToken);
+            
+            _refreshToken = tokenInformation.RefreshToken;
+            _expiresAt = DateTimeOffset
+                .FromUnixTimeSeconds(tokenInformation.CreatedAt)
+                .AddSeconds(tokenInformation.ExpiresIn);
         }
     }
 }

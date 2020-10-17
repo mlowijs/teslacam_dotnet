@@ -18,6 +18,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Notifiers", "Notifiers", "{
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TeslaCam.Notifiers.Pushover", "TeslaCam.Notifiers.Pushover\TeslaCam.Notifiers.Pushover.csproj", "{C76DD539-BD6C-4AF9-A92E-D328E22BF603}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Libraries", "Libraries", "{ADE9E76C-6A4E-4673-AE2A-0567A1614B72}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -56,5 +58,6 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{BC8B026F-45AE-4201-BEFE-519904259C19} = {A84B68D3-960E-4F73-BA0D-E09422560ED7}
 		{C76DD539-BD6C-4AF9-A92E-D328E22BF603} = {3CA2262B-9BEB-4D28-B602-CDA9DE36761D}
+		{B40E5FC7-F874-4895-9CBA-5B4ADE423D6C} = {ADE9E76C-6A4E-4673-AE2A-0567A1614B72}
 	EndGlobalSection
 EndGlobal
