@@ -25,11 +25,11 @@ namespace TeslaCam
         
         private static async Task Main(string[] args)
         {
-            // if (Environment.OSVersion.Platform == PlatformID.Unix && Environment.UserName != RootUserName)
-            // {
-            //     Console.WriteLine("Must be run as root.");
-            //     return;
-            // }
+            if (Environment.OSVersion.Platform == PlatformID.Unix && Environment.UserName != RootUserName)
+            {
+                Console.WriteLine("Must be run as root.");
+                return;
+            }
 
             var hostBuilder = GetHostBuilder(args.Contains("-q"))
                 .Build();
@@ -80,11 +80,10 @@ namespace TeslaCam
                     
                     services.AddAzureBlobStorageUploader();
 
-                    // services.AddHostedService<ArchiveWorker>();
-                    // services.AddHostedService<UploadWorker>();
-                    // services.AddHostedService<CleanWorker>();
+                    services.AddHostedService<ArchiveWorker>();
+                    services.AddHostedService<UploadWorker>();
+                    services.AddHostedService<CleanWorker>();
                     services.AddHostedService<NotificationWorker>();
-                    services.AddHostedService<TestWorker>();
                 })
                 .UseSystemd();
         }
