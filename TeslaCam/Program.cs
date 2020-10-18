@@ -11,6 +11,7 @@ using TeslaCam.Contracts;
 using TeslaCam.Extensions;
 using TeslaCam.HostedServices;
 using TeslaCam.Notifiers.Pushover;
+using TeslaCam.Notifiers.Telegram;
 using TeslaCam.Options;
 using TeslaCam.Services;
 using TeslaCam.Uploaders.AzureBlobStorage;
@@ -24,11 +25,11 @@ namespace TeslaCam
         
         private static async Task Main(string[] args)
         {
-            if (Environment.OSVersion.Platform == PlatformID.Unix && Environment.UserName != RootUserName)
-            {
-                Console.WriteLine("Must be run as root.");
-                return;
-            }
+            // if (Environment.OSVersion.Platform == PlatformID.Unix && Environment.UserName != RootUserName)
+            // {
+            //     Console.WriteLine("Must be run as root.");
+            //     return;
+            // }
 
             var hostBuilder = GetHostBuilder(args.Contains("-q"))
                 .Build();
@@ -75,13 +76,15 @@ namespace TeslaCam
                     services.AddSingleton<INotificationService>(sp => sp.GetRequiredService<NotificationService>());
                     services.AddSingleton<INotificationWorkerService>(sp => sp.GetRequiredService<NotificationService>());
                     services.AddPushoverNotifier();
+                    services.AddTelegramNotifier();
                     
                     services.AddAzureBlobStorageUploader();
 
-                    services.AddHostedService<ArchiveWorker>();
-                    services.AddHostedService<UploadWorker>();
-                    services.AddHostedService<CleanWorker>();
+                    // services.AddHostedService<ArchiveWorker>();
+                    // services.AddHostedService<UploadWorker>();
+                    // services.AddHostedService<CleanWorker>();
                     services.AddHostedService<NotificationWorker>();
+                    services.AddHostedService<TestWorker>();
                 })
                 .UseSystemd();
         }

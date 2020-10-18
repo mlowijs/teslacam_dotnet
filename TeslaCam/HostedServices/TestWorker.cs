@@ -19,7 +19,7 @@ namespace TeslaCam.HostedServices
         {
             while (!stoppingToken.IsCancellationRequested)
             {
-                await _notificationService.NotifyAsync("title", "message", stoppingToken);
+                await _notificationService.NotifyAsync("Clips Uploaded", "Uploaded 123 clips", stoppingToken);
 
                 await Task.Delay(TimeSpan.FromSeconds(30), stoppingToken);
             }

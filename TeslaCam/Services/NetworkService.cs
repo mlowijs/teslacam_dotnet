@@ -2,6 +2,7 @@ using System;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using TeslaCam.Contracts;
 
 namespace TeslaCam.Services
@@ -24,10 +25,14 @@ namespace TeslaCam.Services
             IPAddress.Parse("208.67.220.220"),
         };
 
+        private readonly ILogger<NetworkService> _logger;
+        
         private readonly Random _random;
 
-        public NetworkService()
+        public NetworkService(ILogger<NetworkService> logger)
         {
+            _logger = logger;
+            
             _random = new Random();
         }
         
@@ -42,10 +47,17 @@ namespace TeslaCam.Services
             {
                 var ipAddress = IpAddresses[_random.Next(0, IpAddresses.Length)];
 
-                var reply = await ping.SendPingAsync(ipAddress, PingTimeout);
+                try
+                {
+                    var reply = await ping.SendPingAsync(ipAddress, PingTimeout);
 
-                if (reply.Status == IPStatus.Success)
-                    return true;
+                    if (reply.Status == IPStatus.Success)
+                        return true;
+                }
+                catch (Exception ex) when (ex is not PingException)
+                {
+                    _logger.LogError(ex, "Error occured while sending ping:");
+                }
             }
 
             return false;
