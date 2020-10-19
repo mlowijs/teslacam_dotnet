@@ -20,7 +20,7 @@ namespace TeslaCam.Services
             public int Attempts { get; set; }
         }
 
-        private const int MaxAttempts = 3;
+        private const int MaxAttempts = 5;
         
         private readonly TeslaCamOptions _options;
         private readonly ILogger<NotificationService> _logger;

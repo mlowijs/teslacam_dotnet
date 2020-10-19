@@ -1,6 +1,6 @@
 ﻿using System;
-using System.Linq;
 using System.Threading.Tasks;
+using CommandLine;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -11,7 +11,6 @@ using TeslaCam.Contracts;
 using TeslaCam.Extensions;
 using TeslaCam.HostedServices;
 using TeslaCam.Notifiers.Pushover;
-using TeslaCam.Notifiers.Telegram;
 using TeslaCam.Options;
 using TeslaCam.Services;
 using TeslaCam.Uploaders.AzureBlobStorage;
@@ -20,35 +19,43 @@ namespace TeslaCam
 {
     public class Program
     {
-        private const string ConfigurationFilePath = "/etc/teslacam.json";
+        private const string DefaultConfigurationFilePath = "/etc/teslacam.json";
         private const string RootUserName = "root";
         
-        private static async Task Main(string[] args)
-        {
-            if (Environment.OSVersion.Platform == PlatformID.Unix && Environment.UserName != RootUserName)
-            {
-                Console.WriteLine("Must be run as root.");
-                return;
-            }
+        private static Task Main(string[] args) =>
+            Parser.Default.ParseArguments<CommandLineOptions>(args)
+                .WithParsedAsync(cliOptions =>
+                {
+                    var hostBuilder = GetHostBuilder(cliOptions)
+                        .Build();
 
-            var hostBuilder = GetHostBuilder(args.Contains("-q"))
-                .Build();
+                    if (cliOptions.SendTestNotification)
+                    {
+                        var notifier = hostBuilder.Services.GetRequiredService<INotifier>();
+                        return notifier.NotifyAsync("TeslaCam Test", "Test notification from TeslaCam!", default);
+                    }
+                    
+                    if (Environment.OSVersion.Platform == PlatformID.Unix && Environment.UserName != RootUserName)
+                    {
+                        Console.Error.WriteLine("Must be run as root.");
+                        return Task.CompletedTask;
+                    }
 
-            await hostBuilder.RunAsync();
-        }
+                    return hostBuilder.RunAsync();
+                });
 
-        private static IHostBuilder GetHostBuilder(bool quiet)
+        private static IHostBuilder GetHostBuilder(CommandLineOptions cliOptions)
         {
             return new HostBuilder()
                 .ConfigureAppConfiguration(builder =>
                 {
-                    builder.AddJsonFile(ConfigurationFilePath, true)
+                    builder.AddJsonFile(cliOptions.ConfigurationFilePath ?? DefaultConfigurationFilePath, true)
                         .AddEnvironmentVariables();
                 })
                 .ConfigureLogging(builder =>
                 {
                     builder
-                        .SetMinimumLevel(quiet ? LogLevel.Information : LogLevel.Debug)
+                        .SetMinimumLevel(cliOptions.Quiet ? LogLevel.Information : LogLevel.Debug)
                         .AddConsole(options =>
                         {
                             options.Format = SystemdHelpers.IsSystemdService()
@@ -76,7 +83,6 @@ namespace TeslaCam
                     services.AddSingleton<INotificationService>(sp => sp.GetRequiredService<NotificationService>());
                     services.AddSingleton<INotificationWorkerService>(sp => sp.GetRequiredService<NotificationService>());
                     services.AddPushoverNotifier();
-                    services.AddTelegramNotifier();
                     
                     services.AddAzureBlobStorageUploader();
 
