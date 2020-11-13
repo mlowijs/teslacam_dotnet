@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -49,6 +50,10 @@ namespace TeslaCam.Services
 
         public async Task ArchiveClipsAsync(ClipType clipType, CancellationToken cancellationToken)
         {
+            var sock = new UnixDomainSocketEndPoint("/some/path");
+
+            new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.Unspecified).Connect(sock);
+            
             if (cancellationToken.IsCancellationRequested)
                 return;
             
