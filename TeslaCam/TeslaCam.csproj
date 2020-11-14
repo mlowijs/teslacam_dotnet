@@ -6,6 +6,7 @@
         <OutputType>Exe</OutputType>
         <LangVersion>9</LangVersion>
         <Nullable>enable</Nullable>
+        <RuntimeIdentifier>linux-arm</RuntimeIdentifier>
         <PublishSingleFile>true</PublishSingleFile>
     </PropertyGroup>
 
