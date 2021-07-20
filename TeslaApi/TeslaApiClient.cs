@@ -84,7 +84,7 @@ namespace TeslaApi
                 requestMessage.Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
             
             var responseMessage = await _httpClient.SendAsync(requestMessage, cancellationToken);
-            var responseString = await responseMessage.Content.ReadAsStringAsync();
+            var responseString = await responseMessage.Content.ReadAsStringAsync(cancellationToken);
 
             if (!responseMessage.IsSuccessStatusCode)
             {

@@ -58,9 +58,9 @@ namespace TeslaCam
                         .SetMinimumLevel(cliOptions.Quiet ? LogLevel.Information : LogLevel.Debug)
                         .AddConsole(options =>
                         {
-                            options.Format = SystemdHelpers.IsSystemdService()
-                                ? ConsoleLoggerFormat.Systemd
-                                : ConsoleLoggerFormat.Default;
+                            options.FormatterName = SystemdHelpers.IsSystemdService()
+                                ? ConsoleFormatterNames.Systemd
+                                : ConsoleFormatterNames.Simple;
                         });
                 })
                 .ConfigureServices(services =>
